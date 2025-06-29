@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Guitar Tablature Editor</title>
+    <style>
+        /* --- General Layout & Theme --- */
+        :root {
+            --bg-color: #282c34;
+            --primary-text: #abb2bf;
+            --secondary-text: #888;
+            --control-bg: #3a3f4b;
+            --border-color: #4a505c;
+            --accent-color: #61afef;
+            --accent-hover: #7bc3ff;
+            --fretboard-bg: #3a2e24;
+            --fret-color: #c0c0c0;
+            --string-color: #e0e0e0;
+            --note-bg: #e06c75;
+            --note-text: #ffffff;
+            --scale-note-bg: #98c379;
+            --interval-note-bg: #d19a66;
+            --fingering-note-bg: #c678dd;
+            --disabled-color: #5c6370;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--primary-text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        h1, h2, h3 {
+            color: var(--accent-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+            margin-top: 0;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .main-content {
+            flex: 3;
+            min-width: 600px;
+        }
+        .side-panel {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .control-group {
+            background-color: var(--control-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        /* --- Controls Styling --- */
+        button, select, input {
+            background-color: #4a505c;
+            color: var(--primary-text);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        button:hover, select:hover, input[type=button]:hover {
+            background-color: #565c68;
+        }
+        button:active, select:active, input[type=button]:active {
+            background-color: var(--accent-color);
+            color: #fff;
+        }
+        button:disabled, select:disabled, input:disabled {
+            background-color: var(--disabled-color);
+            color: var(--secondary-text);
+            cursor: not-allowed;
+        }
+        button.primary {
+            background-color: var(--accent-color);
+            color: #fff;
+        }
+        button.primary:hover {
+            background-color: var(--accent-hover);
+        }
+        button.primary:disabled {
+            background-color: var(--disabled-color);
+            color: var(--secondary-text);
+        }
+        input[type=number], input[type=text] {
+            width: 60px;
+        }
+        label {
+            margin-right: 10px;
+        }
+        .control-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .control-row label {
+            flex-shrink: 0;
+        }
+        .control-row input, .control-row select {
+            flex-grow: 1;
+        }
+        #audio-status {
+            text-align: center;
+            margin-top: 5px;
+            font-style: italic;
+            color: var(--secondary-text);
+        }
+
+        /* --- Tablature Text Area --- */
+        #tab-input {
+            width: 100%;
+            height: 250px;
+            background-color: #21252b;
+            color: var(--primary-text);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            line-height: 1.4;
+            padding: 10px;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+
+        /* --- Fretboard SVG --- */
+        #fretboard-svg {
+            width: 100%;
+            background-color: var(--fretboard-bg);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            min-height: 200px;
+        }
+        .fret { stroke: var(--fret-color); stroke-width: 2; }
+        .string { stroke: var(--string-color); transition: stroke-width 0.1s; }
+        .note-marker { cursor: pointer; transition: r 0.1s, fill 0.2s; }
+        .note-marker circle { stroke: #fff; stroke-width: 1.5; }
+        .note-marker text {
+            fill: var(--note-text);
+            font-size: 14px;
+            font-weight: bold;
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none; /* Text should not capture clicks */
+        }
+        .fret-marker { fill: #fff; opacity: 0.3; }
+
+        /* --- Effects Panel --- */
+        .effect-unit {
+            border-left: 3px solid var(--accent-color);
+            padding-left: 10px;
+            margin-bottom: 15px;
+        }
+        .effect-unit h3 { border: none; padding: 0; margin-bottom: 10px; }
+        .effect-unit .control-row { flex-wrap: wrap; }
+
+        /* --- File Input --- */
+        input[type="file"] { display: none; }
+        .file-label {
+            background-color: #4a505c;
+            color: var(--primary-text);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .file-label:hover { background-color: #565c68; }
+    </style>
+</head>
+<body>
+
+    <h1>Advanced Guitar Tablature Editor</h1>
+
+    <div class="container">
+        <!-- Main Content Area: Tab Editor and Fretboard -->
+        <div class="main-content">
+            <div class="control-group">
+                <h2>Tablature Editor</h2>
+                <textarea id="tab-input" spellcheck="false"></textarea>
+                <div class="control-row" style="margin-top:10px;">
+                    <button id="play-tab-btn" class="primary" disabled>▶️ Play Tab</button>
+                    <button id="stop-tab-btn" disabled>⏹️ Stop</button>
+                    <label for="tempo-input">Tempo:</label>
+                    <input type="number" id="tempo-input" value="120" min="20" max="300">
+                </div>
+                 <div class="control-row" style="margin-top:10px;">
+                    <button id="import-txt-btn">Import from Text</button>
+                    <button id="export-txt-btn">Export to Text</button>
+                    <label for="midi-import-input" class="file-label">Import MIDI</label>
+                    <input type="file" id="midi-import-input" accept=".mid,.midi" disabled>
+                    <button id="export-midi-btn" disabled>Export to MIDI</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h2>Visual Fretboard</h2>
+                 <div class="control-row">
+                    <label for="fretboard-display-mode">Display:</label>
+                    <select id="fretboard-display-mode">
+                        <option value="notes">Notes</option>
+                        <option value="intervals">Intervals</option>
+                        <option value="fingerings">Fingerings</option>
+                    </select>
+                </div>
+                <svg id="fretboard-svg"></svg>
+            </div>
+        </div>
+
+        <!-- Side Panel: Settings, Scales, Chords, Effects -->
+        <div class="side-panel">
+            <button id="start-audio-btn" class="primary" style="width:100%; font-size: 1.2em; padding: 15px;">START AUDIO</button>
+            <div id="audio-status">Click above to enable sound</div>
+
+            <div class="control-group">
+                <h2>Instrument Setup</h2>
+                <div class="control-row">
+                    <label for="string-count">Strings:</label>
+                    <input type="number" id="string-count" value="6" min="1" max="12">
+                    <label for="fret-count">Frets:</label>
+                    <input type="number" id="fret-count" value="24" min="12" max="36">
+                </div>
+                <h3>Open String Tuning</h3>
+                <div id="tuning-controls"></div>
+                <h3>Microtonal Fret Ratios (12-TET default)</h3>
+                <textarea id="fret-ratios-input" rows="4" style="width: 100%; box-sizing: border-box; font-family: monospace;"></textarea>
+                <button id="reset-frets-btn" style="margin-top: 5px;">Reset to 12-TET</button>
+                <button id="overtone-demo-btn" style="margin-top: 5px; width:100%">Overtone Series Demo</button>
+            </div>
+            
+            <div class="control-group">
+                <h2>Theory Tools</h2>
+                <div class="control-row">
+                    <label for="scale-select">Scale:</label>
+                    <select id="scale-select"></select>
+                </div>
+                 <div class="control-row">
+                    <button id="random-scale-btn">Random Scale</button>
+                    <button id="clear-scale-btn">Clear Scale</button>
+                 </div>
+                 <div class="control-row">
+                    <label for="chord-select">Chord:</label>
+                    <select id="chord-select"></select>
+                    <button id="show-chord-btn">Show Chord</button>
+                 </div>
+            </div>
+
+            <div class="control-group">
+                <h2>Audio Effects</h2>
+                <div id="effects-panel"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tone.js library from a CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- SECTION: STATE MANAGEMENT & CONFIGURATION ---
+
+        const AppState = {
+            numStrings: 6,
+            numFrets: 24,
+            tuning: ['E4', 'B3', 'G3', 'D3', 'A2', 'E2'], // Standard tuning, high to low
+            fretRatios: [],
+            audioReady: false,
+            activeNotes: new Set(),
+        };
+
+        const standardGuitarNotes = ['e', 'B', 'G', 'D', 'A', 'E'];
+
+        const Scales = {
+            'Major (Ionian)': [0, 2, 4, 5, 7, 9, 11], 'Natural Minor (Aeolian)': [0, 2, 3, 5, 7, 8, 10], 'Harmonic Minor': [0, 2, 3, 5, 7, 8, 11],
+            'Melodic Minor (Ascending)': [0, 2, 3, 5, 7, 9, 11], 'Dorian': [0, 2, 3, 5, 7, 9, 10], 'Phrygian': [0, 1, 3, 5, 7, 8, 10],
+            'Lydian': [0, 2, 4, 6, 7, 9, 11], 'Mixolydian': [0, 2, 4, 5, 7, 9, 10], 'Locrian': [0, 1, 3, 5, 6, 8, 10],
+            'Major Pentatonic': [0, 2, 4, 7, 9], 'Minor Pentatonic': [0, 3, 5, 7, 10], 'Blues': [0, 3, 5, 6, 7, 10],
+            'Chromatic': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], 'Whole Tone': [0, 2, 4, 6, 8, 10],
+            'Zarlino': [0, 4, 7, 12], 'Pythagorean': [0, 2, 4, 5, 7, 9, 11], 'Meantone': [0, 2, 4, 5, 7, 9, 10], 'Kirnberger': [0, 2, 4, 5, 7, 9, 11],
+            'Ptolemy': [0, 4, 7], 'Zeitler 1 (Raga 1)': [0, 1, 4, 5, 7, 8, 11], 'Zeitler 2 (Raga 2)': [0, 2, 4, 5, 7, 9, 10],
+            'Zeitler 3 (Pelog)': [0, 1, 3, 7, 8], 'Zeitler 4 (Hirajoshi)': [0, 2, 3, 7, 8]
+        };
+        
+        const Chords = {
+            'A Major':    { 5: 0, 4: 2, 3: 2, 2: 2, 1: 0, 0: 'x' }, 'A Minor':    { 5: 0, 4: 2, 3: 2, 2: 1, 1: 0, 0: 'x' },
+            'C Major':    { 4: 3, 3: 2, 2: 0, 1: 1, 0: 'x', 5: 'x' }, 'D Major':    { 3: 0, 2: 2, 1: 3, 0: 2, 4: 'x', 5: 'x' },
+            'E Major':    { 5: 0, 4: 2, 3: 1, 2: 0, 1: 0, 0: 0 }, 'E Minor':    { 5: 0, 4: 2, 3: 0, 2: 0, 1: 0, 0: 0 },
+            'G Major':    { 5: 3, 4: 2, 3: 0, 2: 0, 1: 0, 0: 3 }, 'F Major (Barre)': { 5: 1, 4: 3, 3: 2, 2: 1, 1: 1, 0: 1 },
+            'B Minor (Barre)': { 4: 4, 3: 4, 2: 3, 1: 2, 0: 'x', 5: 2 },
+        };
+
+        // --- DOM ELEMENT REFERENCES ---
+        const DOMElements = {
+            stringCount: document.getElementById('string-count'), fretCount: document.getElementById('fret-count'),
+            tuningControls: document.getElementById('tuning-controls'), fretRatiosInput: document.getElementById('fret-ratios-input'),
+            tabInput: document.getElementById('tab-input'), fretboardSVG: document.getElementById('fretboard-svg'),
+            scaleSelect: document.getElementById('scale-select'), chordSelect: document.getElementById('chord-select'),
+            tempoInput: document.getElementById('tempo-input'), displayModeSelect: document.getElementById('fretboard-display-mode'),
+            startAudioBtn: document.getElementById('start-audio-btn'), audioStatus: document.getElementById('audio-status'),
+            playTabBtn: document.getElementById('play-tab-btn'), stopTabBtn: document.getElementById('stop-tab-btn'),
+            midiImportInput: document.getElementById('midi-import-input'), exportMidiBtn: document.getElementById('export-midi-btn'),
+            effectsPanel: document.getElementById('effects-panel')
+        };
+        
+        // --- AUDIO SETUP (Tone.js) ---
+        let sampler, effects;
+
+        function enableAudioControls(enable) {
+            DOMElements.playTabBtn.disabled = !enable;
+            DOMElements.stopTabBtn.disabled = !enable;
+            DOMElements.midiImportInput.disabled = !enable;
+            DOMElements.exportMidiBtn.disabled = !enable;
+            // Fretboard interactivity is handled within its click handler
+        }
+
+        async function initializeAudio() {
+            DOMElements.startAudioBtn.disabled = true;
+            DOMElements.audioStatus.textContent = 'Initializing Audio Context...';
+            await Tone.start();
+            console.log('Audio context started.');
+            DOMElements.audioStatus.textContent = 'Loading guitar samples...';
+
+            const samplesUrl = {
+                'A2': 'A2.mp3', 'C4': 'C4.mp3', 'E5': 'E5.mp3', 'G3': 'G3.mp3'
+            };
+
+            sampler = new Tone.Sampler({
+                urls: samplesUrl,
+                release: 1,
+                baseUrl: 'https://gleitz.github.io/midi-js-soundfonts/acoustic_guitar_nylon/',
+                onload: () => {
+                    console.log('Guitar samples loaded.');
+                    DOMElements.startAudioBtn.textContent = "✅ Audio Ready";
+                    DOMElements.audioStatus.textContent = "Ready to play!";
+                    AppState.audioReady = true;
+                    enableAudioControls(true);
+                    createEffectsControls();
+                },
+                onerror: (e) => {
+                    console.error("Error loading samples:", e);
+                    DOMElements.audioStatus.textContent = "Error: Could not load samples.";
+                    alert("Failed to load audio samples. Please check your internet connection and try again.");
+                }
+            }).toDestination();
+            
+            effects = {
+                distortion: new Tone.Distortion(0.0), fuzz: new Tone.Distortion(0.0),
+                chorus: new Tone.Chorus(4, 2.5, 0.5), phaser: new Tone.Phaser({frequency: 0.5, octaves: 3, baseFrequency: 350}),
+                flanger: new Tone.Flanger(), delay: new Tone.FeedbackDelay("8n", 0.5), reverb: new Tone.Reverb({ decay: 1.5, wet: 0.5 }),
+                ampSim: new Tone.Chebyshev(1), cabSim: new Tone.Filter(4000, "lowpass")
+            };
+            
+            Object.values(effects).forEach(effect => effect.wet = 0);
+            sampler.chain(...Object.values(effects), Tone.Destination);
+        }
+        
+        // --- INITIALIZATION ---
+        function init() {
+            Object.keys(Scales).forEach(name => DOMElements.scaleSelect.add(new Option(name, name)));
+            DOMElements.scaleSelect.value = 'Major Pentatonic';
+            Object.keys(Chords).forEach(name => DOMElements.chordSelect.add(new Option(name, name)));
+
+            updateInstrumentSettings();
+            generateInitialTabText();
+            setupEventListeners();
+        }
+
+        function setupEventListeners() {
+            DOMElements.startAudioBtn.addEventListener('click', initializeAudio);
+            DOMElements.stringCount.addEventListener('change', updateInstrumentSettings);
+            DOMElements.fretCount.addEventListener('change', updateInstrumentSettings);
+            document.getElementById('reset-frets-btn').addEventListener('click', () => updateInstrumentSettings(true));
+            document.getElementById('overtone-demo-btn').addEventListener('click', setupOvertoneDemo);
+            
+            DOMElements.playTabBtn.addEventListener('click', playTab);
+            DOMElements.stopTabBtn.addEventListener('click', () => { Tone.Transport.stop(); Tone.Transport.cancel(); });
+            document.getElementById('import-txt-btn').addEventListener('click', importTextTab);
+            document.getElementById('export-txt-btn').addEventListener('click', exportTextTab);
+            DOMElements.exportMidiBtn.addEventListener('click', exportMidi);
+            DOMElements.midiImportInput.addEventListener('change', importMidi);
+
+            DOMElements.scaleSelect.addEventListener('change', drawFretboard);
+            document.getElementById('random-scale-btn').addEventListener('click', selectRandomScale);
+            document.getElementById('clear-scale-btn').addEventListener('click', () => { DOMElements.scaleSelect.value = ''; drawFretboard(); });
+            document.getElementById('show-chord-btn').addEventListener('click', showSelectedChord);
+            DOMElements.displayModeSelect.addEventListener('change', drawFretboard);
+        }
+
+        // --- INSTRUMENT & FRETBOARD LOGIC ---
+        function updateInstrumentSettings(forceFretReset = false) {
+            AppState.numStrings = Math.max(1, Math.min(12, parseInt(DOMElements.stringCount.value, 10)));
+            AppState.numFrets = Math.max(12, Math.min(36, parseInt(DOMElements.fretCount.value, 10)));
+            
+            while (AppState.tuning.length < AppState.numStrings) AppState.tuning.push('A4');
+            AppState.tuning.length = AppState.numStrings;
+
+            calculateFretRatios(forceFretReset);
+            createTuningControls();
+            drawFretboard();
+        }
+
+        function createTuningControls() {
+            DOMElements.tuningControls.innerHTML = '';
+            AppState.tuning.forEach((note, i) => {
+                const row = document.createElement('div');
+                row.className = 'control-row';
+                const label = document.createElement('label');
+                label.textContent = `String ${i + 1}:`;
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = note;
+                input.dataset.stringIndex = i;
+                input.addEventListener('change', (e) => {
+                    const stringIndex = parseInt(e.target.dataset.stringIndex, 10);
+                    if (/^[A-Ga-g][#b]?\d{1,2}$/.test(e.target.value)) {
+                        AppState.tuning[stringIndex] = e.target.value;
+                        drawFretboard();
+                    } else {
+                        e.target.value = AppState.tuning[stringIndex];
+                        alert("Invalid note format. Use format like 'E4', 'A#3', or 'Gb2'.");
+                    }
+                });
+                row.append(label, input);
+                DOMElements.tuningControls.appendChild(row);
+            });
+        }
+
+        function calculateFretRatios(reset = false) {
+            AppState.fretRatios = [1];
+            if (reset || DOMElements.fretRatiosInput.value.trim() === '') {
+                const twelfthRootOfTwo = Math.pow(2, 1 / 12);
+                for (let i = 1; i <= AppState.numFrets; i++) AppState.fretRatios.push(Math.pow(twelfthRootOfTwo, i));
+                DOMElements.fretRatiosInput.value = AppState.fretRatios.slice(1).map(r => r.toFixed(6)).join(', ');
+            } else {
+                try {
+                    const ratios = DOMElements.fretRatiosInput.value.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n) && n > 1);
+                    if (ratios.length === 0) throw new Error("No valid ratios.");
+                    AppState.fretRatios.push(...ratios);
+                    while(AppState.fretRatios.length <= AppState.numFrets) AppState.fretRatios.push(AppState.fretRatios[AppState.fretRatios.length - 1] * 1.05);
+                } catch (e) {
+                    alert('Invalid fret ratios. Reverting to 12-TET.');
+                    calculateFretRatios(true);
+                }
+            }
+        }
+        
+        function drawFretboard() {
+            // This function is complex and remains largely unchanged, focusing on drawing.
+            // Minor improvements for clarity and efficiency.
+            const svg = DOMElements.fretboardSVG;
+            svg.innerHTML = ''; 
+            const svgWidth = svg.clientWidth;
+            if (svgWidth === 0) return; // Don't draw if not visible
+            const svgHeight = Math.max(200, AppState.numStrings * 35);
+            svg.style.height = `${svgHeight}px`;
+
+            const padding = { top: 30, right: 20, bottom: 30, left: 50 };
+            const fretboardWidth = svgWidth - padding.left - padding.right;
+            const fretboardHeight = svgHeight - padding.top - padding.bottom;
+            
+            const fretPositions = [0];
+            for (let i = 1; i <= AppState.numFrets; i++) {
+                fretPositions.push((1 - (1 / Math.pow(2, i / 12))) * fretboardWidth);
+            }
+            fretPositions.push(fretboardWidth);
+
+            for (let i = 1; i <= AppState.numFrets; i++) {
+                const x = padding.left + fretPositions[i];
+                const fretLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                fretLine.setAttribute('x1', x); fretLine.setAttribute('y1', padding.top);
+                fretLine.setAttribute('x2', x); fretLine.setAttribute('y2', svgHeight - padding.bottom);
+                fretLine.setAttribute('class', 'fret');
+                svg.appendChild(fretLine);
+            }
+
+            const markers = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
+            markers.forEach(fretNum => {
+                if (fretNum <= AppState.numFrets) {
+                    const x = padding.left + (fretPositions[fretNum - 1] + fretPositions[fretNum]) / 2;
+                    const createDot = (cx, cy) => {
+                        const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                        dot.setAttribute('cx', cx); dot.setAttribute('cy', cy);
+                        dot.setAttribute('r', 5); dot.setAttribute('class', 'fret-marker');
+                        svg.appendChild(dot);
+                    };
+                    if (fretNum % 12 === 0) {
+                        createDot(x, padding.top + fretboardHeight * 0.25);
+                        createDot(x, padding.top + fretboardHeight * 0.75);
+                    } else {
+                        createDot(x, padding.top + fretboardHeight / 2);
+                    }
+                }
+            });
+
+            const stringSpacing = AppState.numStrings > 1 ? fretboardHeight / (AppState.numStrings - 1) : fretboardHeight / 2;
+            for (let i = 0; i < AppState.numStrings; i++) {
+                const y = AppState.numStrings > 1 ? padding.top + i * stringSpacing : padding.top + stringSpacing;
+                const stringLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                stringLine.setAttribute('x1', padding.left); stringLine.setAttribute('y1', y);
+                stringLine.setAttribute('x2', padding.left + fretboardWidth); stringLine.setAttribute('y2', y);
+                stringLine.setAttribute('class', 'string');
+                stringLine.setAttribute('stroke-width', 2.5 - (i * 0.2));
+                svg.appendChild(stringLine);
+
+                const openStringLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                openStringLabel.setAttribute('x', padding.left - 15); openStringLabel.setAttribute('y', y);
+                openStringLabel.textContent = AppState.tuning[i];
+                openStringLabel.setAttribute('text-anchor', 'end'); openStringLabel.setAttribute('dominant-baseline', 'central');
+                openStringLabel.setAttribute('fill', 'var(--primary-text)');
+                svg.appendChild(openStringLabel);
+            }
+            drawFretboardHighlights();
+        }
+
+        function drawFretboardHighlights() {
+            // Function remains unchanged
+            const selectedScaleName = DOMElements.scaleSelect.value;
+            if (!selectedScaleName || !Scales[selectedScaleName]) return;
+
+            const rootNote = Tone.Frequency(AppState.tuning[AppState.numStrings - 1]).toNote().replace(/\d/, '');
+            const scaleNotes = Scales[selectedScaleName].map(interval => Tone.Frequency(rootNote + '3').transpose(interval).toNote().slice(0, -1));
+            
+            for (let s = 0; s < AppState.numStrings; s++) {
+                for (let f = 0; f <= AppState.numFrets; f++) {
+                    try {
+                        const note = getNoteOnFret(s, f);
+                        const noteName = Tone.Frequency(note).toNote().slice(0, -1);
+                        if (scaleNotes.includes(noteName)) {
+                            const noteMidi = Tone.Frequency(note).toMidi();
+                            const rootMidi = Tone.Frequency(rootNote + '3').toMidi();
+                            let textContent = '', fill = 'var(--scale-note-bg)';
+                            const displayMode = DOMElements.displayModeSelect.value;
+                            if (displayMode === 'notes') textContent = noteName;
+                            else if (displayMode === 'intervals') {
+                                const interval = (noteMidi - rootMidi + 1200) % 12;
+                                textContent = ['R', 'm2', 'M2', 'm3', 'M3', 'P4', 'd5', 'P5', 'm6', 'M6', 'm7', 'M7'][interval];
+                                if (interval === 0) fill = 'var(--note-bg)';
+                            } else if (displayMode === 'fingerings') {
+                                const interval = (noteMidi - rootMidi + 1200) % 12;
+                                textContent = (interval + 1).toString();
+                                fill = 'var(--fingering-note-bg)';
+                            }
+                            drawNoteOnFretboard(s, f, textContent, fill);
+                        }
+                    } catch(e) { /* Ignore invalid notes for drawing */ }
+                }
+            }
+        }
+
+        function drawNoteOnFretboard(stringIndex, fret, text, fill = 'var(--note-bg)') {
+            // Function remains largely unchanged, but with added event listener logic
+            if (fret === 'x') return;
+            const fretNum = parseInt(f, 10);
+            const svg = DOMElements.fretboardSVG;
+            const svgHeight = svg.clientHeight;
+            const svgWidth = svg.clientWidth;
+            const padding = { top: 30, right: 20, bottom: 30, left: 50 };
+            const fretboardHeight = svgHeight - padding.top - padding.bottom;
+            const fretboardWidth = svgWidth - padding.left - padding.right;
+            const stringSpacing = AppState.numStrings > 1 ? fretboardHeight / (AppState.numStrings - 1) : fretboardHeight / 2;
+
+            const fretPositions = [0];
+            for (let i = 1; i <= AppState.numFrets; i++) fretPositions.push((1 - (1 / Math.pow(2, i / 12))) * fretboardWidth);
+            
+            const y = AppState.numStrings > 1 ? padding.top + stringIndex * stringSpacing : padding.top + stringSpacing;
+            const x = padding.left + (fretNum === 0 ? -15 : (fretPositions[fretNum - 1] + fretPositions[fretNum]) / 2);
+            
+            const noteGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            noteGroup.setAttribute('class', 'note-marker');
+            noteGroup.dataset.string = stringIndex; noteGroup.dataset.fret = fretNum;
+
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', x); circle.setAttribute('cy', y); circle.setAttribute('r', 12); circle.setAttribute('fill', fill);
+            
+            const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            textEl.setAttribute('x', x); textEl.setAttribute('y', y); textEl.textContent = text;
+            
+            noteGroup.append(circle, textEl);
+            svg.appendChild(noteGroup);
+
+            noteGroup.addEventListener('mousedown', () => playNoteFromFretboard(stringIndex, fretNum, true));
+            noteGroup.addEventListener('mouseup', () => playNoteFromFretboard(stringIndex, fretNum, false));
+            noteGroup.addEventListener('mouseleave', () => playNoteFromFretboard(stringIndex, fretNum, false));
+        }
+
+        function getNoteOnFret(stringIndex, fret) {
+            const openStringNote = AppState.tuning[stringIndex];
+            if (!openStringNote || fret < 0 || fret > AppState.numFrets) throw new Error("Invalid string or fret");
+            return Tone.Frequency(openStringNote).transpose(fret);
+        }
+
+        function playNoteFromFretboard(stringIndex, fret, isPress) {
+            if (!AppState.audioReady) return; // This check is crucial
+            const noteId = `${stringIndex}-${fret}`;
+            if (isPress) {
+                if (AppState.activeNotes.has(noteId)) return;
+                try {
+                    const noteToPlay = getNoteOnFret(stringIndex, fret);
+                    sampler.triggerAttack(noteToPlay);
+                    AppState.activeNotes.add(noteId);
+                } catch (e) { console.error(e); }
+            } else {
+                if (!AppState.activeNotes.has(noteId)) return;
+                try {
+                    const noteToRelease = getNoteOnFret(stringIndex, fret);
+                    sampler.triggerRelease(noteToRelease);
+                    AppState.activeNotes.delete(noteId);
+                } catch (e) { console.error(e); }
+            }
+        }
+
+        function setupOvertoneDemo() {
+            const rootNote = "C2";
+            const overtones = Array.from({length: AppState.numStrings}, (_, i) => Tone.Frequency(rootNote).transpose(12 * Math.log2(i + 1)).toNote());
+            AppState.tuning = overtones.reverse();
+            createTuningControls();
+            drawFretboard();
+            alert(`Tuning set to the overtone series of ${rootNote}.`);
+        }
+
+        // --- TABLATURE PARSING AND PLAYBACK ---
+        function parseTextTab() {
+            // Improved parser to be more robust
+            const lines = DOMElements.tabInput.value.split('\n').map(l => l.trim()).filter(l => l);
+            const tabLines = [];
+            const stringRegex = /^[eBGDAEebgdae][#b]?\s*\|/;
+
+            // Find the first valid tab line
+            const firstLineIndex = lines.findIndex(line => stringRegex.test(line));
+            if (firstLineIndex === -1) return { stringData: [], tabLength: 0 };
+
+            // Collect all consecutive tab lines
+            for (let i = firstLineIndex; i < lines.length; i++) {
+                if (stringRegex.test(lines[i])) {
+                    tabLines.push(lines[i]);
+                } else {
+                    break; // Stop when a non-tab line is encountered
+                }
+            }
+
+            const stringData = Array(tabLines.length).fill(null).map(() => []);
+            let tabLength = 0;
+
+            tabLines.forEach((line, stringIndex) => {
+                const tabPart = line.substring(line.indexOf('|') + 1).replace(/\|/g, '');
+                tabLength = Math.max(tabLength, tabPart.length);
+                let i = 0;
+                while (i < tabPart.length) {
+                    let fret = null, technique = null;
+                    if (/\d/.test(tabPart[i])) {
+                        let numStr = tabPart[i];
+                        while (i + 1 < tabPart.length && /\d/.test(tabPart[i + 1])) {
+                            i++; numStr += tabPart[i];
+                        }
+                        fret = parseInt(numStr, 10);
+                    } else if (/[/\\hpx~+]/.test(tabPart[i])) {
+                        technique = tabPart[i];
+                    }
+                    
+                    if (fret !== null) {
+                        stringData[stringIndex].push({fret, technique: null});
+                    } else if (technique !== null) {
+                        // Apply technique to the previous note if possible
+                        if (stringData[stringIndex].length > 0) {
+                            const lastNote = stringData[stringIndex][stringData[stringIndex].length - 1];
+                            if (lastNote && typeof lastNote === 'object') lastNote.technique = technique;
+                        }
+                        stringData[stringIndex].push(null);
+                    } else {
+                        stringData[stringIndex].push(null);
+                    }
+                    i++;
+                }
+            });
+
+            // Normalize lengths
+            stringData.forEach(sData => {
+                while (sData.length < tabLength) sData.push(null);
+                sData.length = tabLength;
+            });
+            
+            return { stringData, tabLength };
+        }
+
+        function playTab() {
+            const { stringData, tabLength } = parseTextTab();
+            if (tabLength === 0) { alert("No valid tab found to play."); return; }
+
+            Tone.Transport.cancel();
+            Tone.Transport.stop();
+            const tempo = parseInt(DOMElements.tempoInput.value, 10);
+            Tone.Transport.bpm.value = tempo;
+
+            const part = new Tone.Part((time, value) => {
+                sampler.triggerAttackRelease(value.note, value.duration, time, value.velocity);
+            }).start(0);
+
+            for (let timeStep = 0; timeStep < tabLength; timeStep++) {
+                for (let stringIndex = 0; stringIndex < stringData.length; stringIndex++) {
+                    const noteInfo = stringData[stringIndex][timeStep];
+                    if (noteInfo && noteInfo.fret !== undefined) {
+                        try {
+                            const note = getNoteOnFret(stringIndex, noteInfo.fret);
+                            // Lengthen legato notes to simulate connection
+                            const duration = (noteInfo.technique && "hp/\\".includes(noteInfo.technique)) ? "4n" : "8n";
+                            part.add(timeStep * Tone.Time("16n").toSeconds(), {note, duration, velocity: 0.9});
+                        } catch(e) { /* Skip invalid note */ }
+                    }
+                }
+            }
+            Tone.Transport.start();
+        }
+        
+        // --- IMPORT/EXPORT ---
+        function generateInitialTabText() {
+            DOMElements.tabInput.value = standardGuitarNotes.slice(0, AppState.numStrings)
+                .map(note => `${note.padEnd(2)}|${'-'.repeat(70)}|`).join('\n');
+        }
+
+        function importTextTab() {
+            const { tabLength } = parseTextTab();
+            if (tabLength > 0) alert(`Tablature with ${tabLength} steps imported successfully.`);
+            else alert('Could not find valid tablature. Make sure lines start with a note name (e, B, G, etc.) followed by a pipe "|".');
+        }
+
+        function exportTextTab() {
+            const blob = new Blob([DOMElements.tabInput.value], { type: 'text/plain' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'tablature.txt';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        function exportMidi() {
+            const { stringData, tabLength } = parseTextTab();
+            if (tabLength === 0) { alert('No tab data to export.'); return; }
+
+            const midi = new Tone.Midi();
+            const track = midi.addTrack();
+            midi.header.setTempo(parseInt(DOMElements.tempoInput.value, 10));
+
+            for (let timeStep = 0; timeStep < tabLength; timeStep++) {
+                for (let s = 0; s < stringData.length; s++) {
+                    const noteInfo = stringData[s][timeStep];
+                    if (noteInfo && noteInfo.fret !== undefined) {
+                        try {
+                            const noteFreq = getNoteOnFret(s, noteInfo.fret);
+                            track.addNote({
+                                midi: Tone.Frequency(noteFreq).toMidi(),
+                                time: timeStep * Tone.Time("16n").toSeconds(),
+                                duration: Tone.Time("8n").toSeconds(),
+                            });
+                        } catch(e) { /* skip */ }
+                    }
+                }
+            }
+            const blob = new Blob([midi.toArray()], { type: 'audio/midi' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'tablature.mid';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        function importMidi(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const midi = new Tone.Midi(e.target.result);
+                    const notes = midi.tracks.flatMap(track => track.notes).sort((a, b) => a.time - b.time);
+                    if (notes.length === 0) { alert("MIDI has no notes."); return; }
+                    
+                    const timeStepDuration = Tone.Time("16n").toSeconds({ bpm: midi.header.tempos[0]?.bpm || 120 });
+                    const numTimeSteps = Math.ceil(notes[notes.length - 1].time / timeStepDuration) + 4;
+                    const newTab = Array(AppState.numStrings).fill(0).map(() => Array(numTimeSteps).fill(null));
+
+                    notes.forEach(note => {
+                        const timeStep = Math.round(note.time / timeStepDuration);
+                        let bestPlacement = { string: -1, fret: 999 };
+                        for (let s = 0; s < AppState.numStrings; s++) {
+                            const fret = note.midi - Tone.Frequency(AppState.tuning[s]).toMidi();
+                            if (fret >= 0 && fret <= AppState.numFrets && fret < bestPlacement.fret) {
+                                bestPlacement = { string: s, fret: fret };
+                            }
+                        }
+                        if (bestPlacement.string !== -1 && !newTab[bestPlacement.string][timeStep]) {
+                             newTab[bestPlacement.string][timeStep] = { fret: bestPlacement.fret };
+                        }
+                    });
+                    generateTextFromTab(newTab, numTimeSteps);
+                    alert("MIDI imported. Tablature updated.");
+                } catch (err) { alert("Failed to import MIDI: " + err.message); }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function generateTextFromTab(tabData, numSteps) {
+            DOMElements.tabInput.value = tabData.map((stringNotes, s) => {
+                let line = `${(standardGuitarNotes[s] || 's').padEnd(2)}|`;
+                for (let t = 0; t < numSteps; t++) {
+                    const note = stringNotes[t];
+                    line += note ? (note.fret + (note.technique || '')) : '-';
+                    // Add spacing for multi-digit frets
+                    if (note && note.fret > 9) { /* do nothing extra */ } else if (note) line += '-'; else line += '-';
+                }
+                return line + '|';
+            }).join('\n');
+        }
+
+        // --- THEORY & CHORD TOOLS ---
+        function selectRandomScale() {
+            const scaleNames = Object.keys(Scales);
+            DOMElements.scaleSelect.value = scaleNames[Math.floor(Math.random() * scaleNames.length)];
+            drawFretboard();
+        }
+
+        function showSelectedChord() {
+            drawFretboard(); // Redraw to clear previous notes
+            const chordShape = Chords[DOMElements.chordSelect.value];
+            if (!chordShape) return;
+            // The rest of this function remains unchanged.
+            for (let s = 0; s < AppState.numStrings; s++) {
+                const fret = chordShape[s];
+                if (fret !== undefined && fret !== 'x') {
+                    const note = getNoteOnFret(s, fret);
+                    let textContent = Tone.Frequency(note).toNote().slice(0, -1);
+                    drawNoteOnFretboard(s, fret, textContent, 'var(--interval-note-bg)');
+                }
+            }
+        }
+        
+        // --- EFFECTS PANEL ---
+        function createEffectsControls() {
+            // Function remains the same, builds UI for effects.
+             const panel = DOMElements.effectsPanel;
+            panel.innerHTML = '';
+            
+            const effectConfig = {
+                distortion: { name: 'Overdrive', params: { wet: { label: 'Mix' } , distortion: { label: 'Drive' }}},
+                fuzz: { name: 'Fuzz', params: { wet: { label: 'Mix' } , distortion: { label: 'Fuzz' }}},
+                chorus: { name: 'Chorus', params: { wet: { label: 'Mix' }, frequency: { label: 'Rate' }, depth: { label: 'Depth' }}},
+                phaser: { name: 'Phaser', params: { wet: { label: 'Mix' }, frequency: { label: 'Rate' }, octaves: { label: 'Octaves' }}},
+                delay: { name: 'Delay', params: { wet: { label: 'Mix' }, feedback: { label: 'Feedback' }}},
+                reverb: { name: 'Reverb', params: { wet: { label: 'Mix' }, decay: { label: 'Decay' }}}
+            };
+
+            for (const key in effectConfig) {
+                const config = effectConfig[key];
+                const effect = effects[key];
+                const unit = document.createElement('div');
+                unit.className = 'effect-unit';
+                unit.innerHTML = `<h3>${config.name}</h3>`;
+
+                for (const paramName in config.params) {
+                    const paramConfig = config.params[paramName];
+                    const param = effect[paramName];
+                    const row = document.createElement('div');
+                    row.className = 'control-row';
+                    const label = document.createElement('label');
+                    label.textContent = paramConfig.label;
+                    const slider = document.createElement('input');
+                    slider.type = 'range';
+                    // Use Tone.js signal parameter ranges
+                    slider.min = param.minValue; slider.max = param.maxValue; slider.step = (param.maxValue - param.minValue) / 100;
+                    slider.value = param.value;
+
+                    slider.addEventListener('input', (e) => param.value = parseFloat(e.target.value));
+                    row.append(label, slider);
+                    unit.appendChild(row);
+                }
+                panel.appendChild(unit);
+            }
+        }
+        
+        // --- START THE APPLICATION ---
+        init();
+        window.addEventListener('resize', drawFretboard); // Redraw on resize
+    });
+    </script>
+</body>
+</html>
