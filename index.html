@@ -30,7 +30,7 @@
         #fretboard-wrapper { min-width: 100%; transition: width 0.2s, transform 0.3s; }
         .string-control-panel { background: #3a3a3a; border-radius: 5px; padding: 5px 10px; height: 25px; display: flex; align-items: center; gap: 8px; font-size: 0.8em; transition: width 0.3s ease-in-out; }
         .input-group { display: flex; align-items: center; gap: 4px; }
-        .input-group input { background: #555; color: #fff; border: 1px solid #777; border-radius: 3px; padding: 2px; box-sizing: border-box; text-align: center; }
+        .input-group input, #scale-search-input { background: #555; color: #fff; border: 1px solid #777; border-radius: 3px; padding: 4px; box-sizing: border-box; text-align: center; }
         input[id^="len-"], input[id^="ten-"] { width: 50px; }
         input[id^="wid-"] { width: 60px; }
         .info-display { margin-left: auto; display: flex; align-items: center; gap: 15px; font-weight: bold; color: #ffc107; white-space: nowrap; }
@@ -110,6 +110,12 @@
         #midi-file-label { display: inline-block; padding: 8px 15px; background-color: #e0a800; color: #333; font-weight: bold; border-radius: 5px; cursor: pointer; }
         #midi-file-label:hover { background-color: #ffc107; }
 
+        /* Scale Search Input */
+        .scale-select-container { display: flex; flex-direction: column; gap: 5px; }
+        #scale-search-input { width: 100%; text-align: left; padding-left: 8px; }
+        #scale-type-select { width: 100%; height: 120px; padding: 5px; } /* Use size attribute in HTML instead of height for consistency */
+        #scale-type-select option { padding: 4px; }
+
     </style>
 </head>
 <body>
@@ -120,7 +126,14 @@
                 <h4>Music Theory</h4>
                 <div class="control-group"><label>Root Note:</label><select id="root-note-select"></select></div>
                 <div class="control-group"><label>Chord:</label><select id="chord-type-select"></select><button id="show-chord-btn">Show</button><button id="clear-fretboard-btn">Clear</button></div>
-                <div class="control-group"><label>Scale:</label><select id="scale-type-select"></select><button id="show-scale-btn">Show</button><button id="random-scale-btn">Random</button><select id="notes-per-string-select"><option value="all">All Notes</option><option value="3">3 per String</option><option value="4">4 per String</option></select></div>
+                <div class="scale-select-container">
+                    <label>Scale:</label>
+                    <input type="text" id="scale-search-input" placeholder="Search scales...">
+                    <select id="scale-type-select" size="5"></select>
+                </div>
+                <div class="control-group">
+                    <button id="show-scale-btn">Show</button><button id="random-scale-btn">Random</button><select id="notes-per-string-select"><option value="all">All Notes</option><option value="3">3 per String</option><option value="4">4 per String</option></select>
+                </div>
                 <div class="control-group"><button id="toggle-scale-set-btn">Show Zeitler Scales</button></div>
             </div>
             <div class="control-section control-section-instrument">
@@ -177,7 +190,7 @@
             </div>
         </div>
         <div id="circle-of-fifths-container">
-             <h3>Circle of Fifths</h3>
+             <h3>12 EDO Diatonic Circle of Fifths</h3>
              <svg id="cof-svg" width="300" height="300">
                 <g id="cof-lock-btn">
                     <circle cx="150" cy="150" r="30" fill="#666" stroke="#888" stroke-width="2"></circle>
@@ -241,7 +254,10 @@
             <p>When the "Show Zeitler Scales" option is active, the scale list is populated from a library of over 2000 scales, with names and structures by William Zeitler, as listed at <a href="http://allthescales.org" target="_blank" rel="noopener noreferrer">allthescales.org</a>.</p>
         </div>
     </div>
-
+    
+    <script src="voicings.js"></script>
+    <script src="zeitler-scales.js"></script>
+    <script src="tab-editor.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- AUDIO SYNTHESIS ---
@@ -303,7 +319,13 @@
             const JUST_INTONATION_RATIOS = [1/1, 16/15, 9/8, 6/5, 5/4, 4/3, 45/32, 3/2, 8/5, 5/3, 9/5, 15/8];
             const TRUE_TEMPERAMENT_OFFSETS_CENTS = [ [0, -2, 0, -1, 0, -2, -4, 0, -2, 0, -1, 0], [0, -2, 0, -1, 0, -2, -4, 0, -2, 0, -1, 0], [0, -2, 0, -1, 0, -2, -4, 0, -2, 0, -1, 0], [0, +12, +14, +12, +14, +12, +10, +14, +16, +14, +12, +14], [0, -2, 0, -1, 0, -2, -4, 0, -2, 0, -1, 0], [0, -2, 0, -1, 0, -2, -4, 0, -2, 0, -1, 0] ];
             const CHORD_DEFINITIONS = { 'Major': {intervals:[0,4,7]},'Minor': {intervals:[0,3,7]},'Diminished': {intervals:[0,3,6]},'Augmented': {intervals:[0,4,8]},'Dominant 7th': {intervals:[0,4,7,10]},'Major 7th': {intervals:[0,4,7,11]},'Minor 7th': {intervals:[0,3,7,10]},'Major 6th': {intervals:[0,4,7,9]},'Minor 6th': {intervals:[0,3,7,9]}, 'Suspended 2nd': {intervals:[0,2,7]},'Suspended 4th': {intervals:[0,5,7]},'Major 9th': {intervals:[0,4,7,11,14]},'Dominant 9th': {intervals:[0,4,7,10,14]},'Minor 9th': {intervals:[0,3,7,10,14]},'11th':{intervals:[0,4,7,10,17]},'Dominant 13th':{intervals:[0,4,7,10,14,21]},'Major 13th':{intervals:[0,4,7,11,14,21]},'Minor 13th':{intervals:[0,3,7,10,14,21]} };
+            const CHORD_DEFINITIONS_19 = { 'Subminor (19)': { intervals: [0, 4, 11] }, 'Supermajor (19)': { intervals: [0, 7, 11] }, 'Diminished Seventh (19)': { intervals: [0, 5, 10, 15] } };
+            const CHORD_DEFINITIONS_24 = { 'Neutral (24)': { intervals: [0, 7, 14] } };
+            const CHORD_DEFINITIONS_31 = { 'Neutral (31)': { intervals: [0, 9, 18] }, 'Barbershop Seventh (31)': { intervals: [0, 10, 18, 25] }, 'I Supermajor Minor Seven (31)': { intervals: [0, 11, 18, 25] }, 'Septimal 11th (31)': { intervals: [0, 10, 15, 18, 25] }, 'Undecimal 11th (31)': { intervals: [0, 10, 14, 18, 25] }, 'Neutral Harmonic Seventh (31)': { intervals: [0, 9, 18, 25] }, 'Neutral Minor Seventh (31)': { intervals: [0, 9, 18, 26] }, 'Neutral Major Seventh (31)': { intervals: [0, 9, 18, 28] } };
             const SCALE_DEFINITIONS = {'Major (Ionian)':[0,2,4,5,7,9,11], 'Dorian':[0,2,3,5,7,9,10], 'Phrygian':[0,1,3,5,7,8,10], 'Lydian':[0,2,4,6,7,9,11], 'Mixolydian':[0,2,4,5,7,9,10], 'Minor (Aeolian)':[0,2,3,5,7,8,10], 'Locrian':[0,1,3,5,6,8,10], 'Harmonic Minor':[0,2,3,5,7,8,11], 'Phrygian Dominant':[0,1,4,5,7,8,10], 'Melodic Minor':[0,2,3,5,7,9,11], 'Major Pentatonic':[0,2,4,7,9], 'Minor Pentatonic':[0,3,5,7,10], 'Blues':[0,3,5,6,7,10], 'Neapolitan Minor': [0, 1, 3, 5, 7, 8, 11], 'Byzantine': [0, 1, 4, 5, 7, 8, 11]};
+            const SCALE_DEFINITIONS_19 = { 'Supermajor Lydian (19)': [0, 3, 7, 8, 11, 14, 17], 'Subminor Pentatonic (19)': [0, 4, 6, 11, 15] };
+            const SCALE_DEFINITIONS_24 = { 'Neutral Ionian (24)': [0, 4, 7, 10, 14, 18, 21], 'Neutral Dorian (24)': [0, 3, 6, 10, 14, 17, 20], 'Neutral Phrygian (24)': [0, 3, 7, 11, 14, 17, 21], 'Neutral Lydian (24)': [0, 4, 8, 11, 14, 18, 21], 'Neutral Mixolydian (24)': [0, 4, 7, 10, 14, 17, 20], 'Neutral Aeolian (24)': [0, 3, 6, 10, 13, 16, 20], 'Neutral Locrian (24)': [0, 3, 7, 10, 13, 17, 21], 'Neutral Whole (24)': [0, 3, 7, 10, 14, 17, 21], 'Maqam Bayati (24)': [0, 3, 5, 9, 13, 15, 19], 'Maqam Rast Asc (24)': [0, 4, 7, 9, 13, 17, 20], 'Maqam Rast Desc (24)': [0, 4, 7, 9, 13, 17, 21], 'Maqam Saba (24)': [0, 3, 5, 7, 13, 15, 19], 'Maqam Sigah (24)': [0, 2, 6, 10, 13, 15, 19], 'Maqam Ajam (24)': [0, 4, 8, 10, 14, 18, 22], 'Maqam Hoseyni (24)': [0, 3, 5, 9, 12, 14, 18], 'Maqam Nahawand (24)': [0, 4, 6, 10, 14, 16, 20], 'Maqam Hijaz (24)': [0, 2, 8, 10, 14, 16, 20], 'Maqam Kurd (24)': [0, 2, 6, 10, 12, 16, 20] };
+            const SCALE_DEFINITIONS_31 = { 'Neutral (31)': [0, 4, 8, 11, 15, 19, 23], 'Gamelan Pelog (31)': [0, 3, 7, 14, 17, 21, 28], 'Gamelan pseudo-Slendro (31)': [0, 6, 12, 18, 24], 'Pure Blues (31)': [0, 10, 18, 25], 'Undecimal Blues (31)': [0, 10, 14, 18, 27], 'Mothra (Square Wave) (31)': [0, 5, 10, 14, 18, 22, 25, 28], 'Supermajor Hexatonic (31)': [0, 5, 11, 13, 18, 25] };
             const INTERVAL_NAMES = {0:'R',1:'b2',2:'2',3:'b3',4:'3',5:'4',6:'b5',7:'5',8:'#5',9:'6',10:'b7',11:'7',12:'R',13:'b9',14:'9',15:'#9',16:'b11',17:'11',18:'#11',19:'b13',20:'6',21:'13'};
             const ROMAN_INTERVAL_NAMES = {0:'I',1:'bII',2:'II',3:'bIII',4:'III',5:'IV',6:'bV',7:'V',8:'#V',9:'VI',10:'bVII',11:'VII'};
             const DIATONIC_DEGREES = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
@@ -323,35 +345,20 @@
                     intervals: ["R", "↑1", "m2", "M2-", "↓2", "M2", "↑2", "m3", "M3-", "↓3", "d4", "M3", "↑3", "P4", "↑4", "A4", "d5", "↓5", "P5", "↑5", "m6", "M6-", "↓6", "M6", "↑6", "m7", "M7-", "↓7", "d8", "M7", "↑7"]
                 }
             };
-            const VOICING_LIBRARY = {
-                'C': {'Major':[{fret:null,finger:'X'},{fret:2,finger:'3'},{fret:1,finger:'2'},{fret:-1,finger:'O'},{fret:0,finger:'1'},{fret:null,finger:'X'}],'Minor':[{fret:null,finger:'X'},{fret:2,finger:'1'},{fret:4,finger:'3'},{fret:4,finger:'4'},{fret:3,finger:'2'},{fret:2,finger:'1'}],'Dominant 7th':[{fret:null,finger:'X'},{fret:2,finger:'2'},{fret:1,finger:'1'},{fret:2,finger:'3'},{fret:0,finger:'O'},{fret:null,finger:'X'}],'Major 7th':[{fret:null,finger:'X'},{fret:2,finger:'2'},{fret:1,finger:'1'},{fret:-1,finger:'O'},{fret:-1,finger:'O'},{fret:null,finger:'X'}],'Minor 7th':[{fret:null,finger:'X'},{fret:2,finger:'1'},{fret:4,finger:'1'},{fret:2,finger:'2'},{fret:3,finger:'3'},{fret:2,finger:'1'}],'Major 6th':[{fret:null,finger:'X'},{fret:2,finger:'3'},{fret:1,finger:'1'},{fret:1,finger:'2'},{fret:null,finger:'X'},{fret:null,finger:'X'}],'Minor 6th':[{fret:null,finger:'X'},{fret:2,finger:'3'},{fret:0,finger:'1'},{fret:1,finger:'2'},{fret:0,finger:'O'},{fret:null,finger:'X'}],'Diminished':[{fret:null,finger:'X'},{fret:2,finger:'2'},{fret:3,finger:'3'},{fret:1,finger:'1'},{fret:3,finger:'4'},{fret:null,finger:'X'}],'Suspended 2nd':[{fret:null,finger:'X'},{fret:2,finger:'3'},{fret:-1,finger:'O'},{fret:-1,finger:'O'},{fret:0,finger:'1'},{fret:null,finger:'X'}],'Suspended 4th':[{fret:null,finger:'X'},{fret:2,finger:'2'},{fret:2,finger:'3'},{fret:-1,finger:'O'},{fret:0,finger:'1'},{fret:null,finger:'X'}]},
-                'C#':{'Major':[{fret:null,finger:'X'},{fret:3,finger:'1'},{fret:5,finger:'3'},{fret:5,finger:'4'},{fret:5,finger:'2'},{fret:3,finger:'1'}],'Minor':[{fret:null,finger:'X'},{fret:3,finger:'1'},{fret:5,finger:'3'},{fret:5,finger:'4'},{fret:4,finger:'2'},{fret:3,finger:'1'}],'Dominant 7th':[{fret:null,finger:'X'},{fret:3,finger:'2'},{fret:2,finger:'1'},{fret:3,finger:'3'},{fret:1,finger:'O'},{fret:null,finger:'X'}],'Major 7th':[{fret:null,finger:'X'},{fret:3,finger:'1'},{fret:5,finger:'1'},{fret:4,finger:'2'},{fret:5,finger:'4'},{fret:3,finger:'1'}],'Minor 7th':[{fret:null,finger:'X'},{fret:3,finger:'1'},{fret:5,finger:'1'},{fret:3,finger:'2'},{fret:4,finger:'3'},{fret:3,finger:'1'}],'Major 6th':[{fret:null,finger:'X'},{fret:3,finger:'3'},{fret:2,finger:'1'},{fret:2,finger:'2'},{fret:null,finger:'X'},{fret:null,finger:'X'}],'Minor 6th':[{fret:null,finger:'X'},{fret:3,finger:'4'},{fret:1,finger:'2'},{fret:2,finger:'3'},{fret:1,finger:'1'},{fret:null,finger:'X'}],'Diminished':[{fret:null,finger:'X'},{fret:3,finger:'2'},{fret:4,finger:'3'},{fret:2,finger:'1'},{fret:4,finger:'4'},{fret:null,finger:'X'}],'Suspended 2nd':[{fret:null,finger:'X'},{fret:3,finger:'2'},{fret:0,finger:'O'},{fret:0,finger:'O'},{fret:3,finger:'3'},{fret:3,finger:'4'}],'Suspended 4th':[{fret:null,finger:'X'},{fret:3,finger:'1'},{fret:3,finger:'1'},{fret:0,finger:'O'},{fret:1,finger:'O'},{fret:null,finger:'X'}]},
-                'D': {'Major':[{fret:null,finger:'X'},{fret:null,finger:'X'},{fret:-1,finger:'O'},{fret:1,finger:'1'},{fret:2,finger:'3'},{fret:1,finger:'2'}],'Minor':[{fret:null,finger:'X'},{fret:null,finger:'X'},{fret:-1,finger:'O'},{fret:1,finger:'2'},{fret:2,finger:'3'},{fret:0,finger:'1'}],'Dominant 7th':[{fret:null,finger:'X'},{fret:null,finger:'X'},{fret:-1,finger:'O'},{fret:1,finger:'2'},{fret:0,finger:'1'},{fret:1,finger:'3'}],'Major 7th':[{fret:null,finger:'X'},{fret:null,finger:'X'},{fret:-1,finger:'O'},{fret:1,finger:'1'},{fret:1,finger:'2'},{fret:1,finger:'3'}],'Minor 7th':[{fret:null,finger:'X'},{fret:null,finger:'X'},{fret:-1,finger:'O'},{fret:1,finger:'2'},{fret:0,finger:'1'},{fret:0,finger:'1'}],'Major 6th':[{fret:null,finger:'X'},{fret:null,finger:'X'},{fret:-1,finger:'O'},{fret:1,finger:'2'},{fret:1,finger:'3'},{fret:1,finger:'4'}],'Minor 6th':[{fret:null,finger:'X'},{fret:null,finger:'X'},{fret:-1,finger:'O'},{fret:0,finger:'O'},{fret:1,finger:'1'},{fret:0,finger:'O'}],'Diminished':[{fret:null,finger:'X'},{fret:null,finger:'X'},{fret:-1,finger:'O'},{fret:0,finger:'1'},{fret:2,finger:'3'},{fret:0,finger:'2'}],'Suspended 2nd':[{fret:null,finger:'X'},{fret:null,finger:'X'},{fret:-1,finger:'O'},{fret:1,finger:'2'},{fret:2,finger:'3'},{fret:-1,finger:'O'}],'Suspended 4th':[{fret:null,finger:'X'},{fret:null,finger:'X'},{fret:-1,finger:'O'},{fret:1,finger:'1'},{fret:2,finger:'2'},{fret:2,finger:'3'}]},
-                'D#':{'Major':[{fret:null,finger:'X'},{fret:5,finger:'1'},{fret:7,finger:'3'},{fret:7,finger:'4'},{fret:7,finger:'2'},{fret:5,finger:'1'}],'Minor':[{fret:null,finger:'X'},{fret:5,finger:'1'},{fret:7,finger:'3'},{fret:7,finger:'4'},{fret:6,finger:'2'},{fret:5,finger:'1'}],'Dominant 7th':[{fret:null,finger:'X'},{fret:5,finger:'1'},{fret:7,finger:'1'},{fret:5,finger:'2'},{fret:6,finger:'3'},{fret:5,finger:'1'}],'Major 7th':[{fret:null,finger:'X'},{fret:5,finger:'1'},{fret:7,finger:'1'},{fret:6,finger:'2'},{fret:7,finger:'4'},{fret:5,finger:'1'}],'Minor 7th':[{fret:null,finger:'X'},{fret:5,finger:'1'},{fret:7,finger:'1'},{fret:5,finger:'2'},{fret:6,finger:'3'},{fret:5,finger:'1'}],'Major 6th':[{fret:null,finger:'X'},{fret:5,finger:'1'},{fret:7,finger:'3'},{fret:7,finger:'4'},{fret:7,finger:'2'},{fret:5,finger:'1'}],'Minor 6th':[{fret:null,finger:'X'},{fret:5,finger:'1'},{fret:3,finger:'O'},{fret:4,finger:'2'},{fret:3,finger:'1'},{fret:null,finger:'X'}],'Diminished':[{fret:null,finger:'X'},{fret:0,finger:'1'},{fret:2,finger:'3'},{fret:0,finger:'1'},{fret:1,finger:'2'},{fret:null,finger:'X'}],'Suspended 2nd':[{fret:null,finger:'X'},{fret:5,finger:'1'},{fret:7,finger:'3'},{fret:7,finger:'4'},{fret:8,finger:'2'},{fret:5,finger:'1'}],'Suspended 4th':[{fret:null,finger:'X'},{fret:5,finger:'1'},{fret:7,finger:'3'},{fret:7,finger:'4'},{fret:8,finger:'2'},{fret:6,finger:'1'}]},
-                'E': {'Major':[{fret:-1,finger:'O'},{fret:1,finger:'2'},{fret:1,finger:'3'},{fret:0,finger:'1'},{fret:-1,finger:'O'},{fret:-1,finger:'O'}],'Minor':[{fret:-1,finger:'O'},{fret:1,finger:'2'},{fret:1,finger:'3'},{fret:-1,finger:'O'},{fret:-1,finger:'O'},{fret:-1,finger:'O'}],'Dominant 7th':[{fret:-1,finger:'O'},{fret:1,finger:'2'},{fret:-1,finger:'O'},{fret:0,finger:'1'},{fret:-1,finger:'O'},{fret:-1,finger:'O'}],'Major 7th':[{fret:-1,finger:'O'},{fret:1,finger:'3'},{fret:0,finger:'2'},{fret:0,finger:'1'},{fret:-1,finger:'O'},{fret:null,finger:'X'}],'Minor 7th':[{fret:-1,finger:'O'},{fret:1,finger:'2'},{fret:-1,finger:'O'},{fret:-1,finger:'O'},{fret:-1,finger:'O'},{fret:-1,finger:'O'}],'Major 6th':[{fret:-1,finger:'O'},{fret:1,finger:'2'},{fret:1,finger:'3'},{fret:0,finger:'1'},{fret:1,finger:'4'},{fret:-1,finger:'O'}],'Minor 6th':[{fret:-1,finger:'O'},{fret:1,finger:'3'},{fret:1,finger:'4'},{fret:-1,finger:'O'},{fret:1,finger:'2'},{fret:-1,finger:'O'}],'Diminished':[{fret:null,finger:'X'},{fret:0,finger:'1'},{fret:1,finger:'2'},{fret:2,finger:'4'},{fret:1,finger:'3'},{fret:null,finger:'X'}],'Suspended 2nd':[{fret:-1,finger:'O'},{fret:1,finger:'1'},{fret:3,finger:'3'},{fret:3,finger:'4'},{fret:-1,finger:'O'},{fret:-1,finger:'O'}],'Suspended 4th':[{fret:-1,finger:'O'},{fret:1,finger:'1'},{fret:1,finger:'2'},{fret:1,finger:'3'},{fret:-1,finger:'O'},{fret:-1,finger:'O'}]},
-                'F': {'Major':[{fret:0,finger:'1'},{fret:2,finger:'3'},{fret:2,finger:'4'},{fret:1,finger:'2'},{fret:0,finger:'1'},{fret:0,finger:'1'}],'Minor':[{fret:0,finger:'1'},{fret:2,finger:'3'},{fret:2,finger:'4'},{fret:0,finger:'1'},{fret:0,finger:'1'},{fret:0,finger:'1'}],'Dominant 7th':[{fret:0,finger:'1'},{fret:2,finger:'1'},{fret:0,finger:'2'},{fret:1,finger:'3'},{fret:0,finger:'1'},{fret:0,finger:'1'}],'Major 7th':[{fret:0,finger:'1'},{fret:2,finger:'1'},{fret:1,finger:'2'},{fret:1,finger:'3'},{fret:0,finger:'1'},{fret:0,finger:'1'}],'Minor 7th':[{fret:0,finger:'1'},{fret:2,finger:'1'},{fret:0,finger:'1'},{fret:0,finger:'1'},{fret:0,finger:'1'},{fret:0,finger:'1'}],'Major 6th':[{fret:0,finger:'1'},{fret:2,finger:'3'},{fret:2,finger:'4'},{fret:1,finger:'2'},{fret:2,finger:'?'},{fret:0,finger:'1'}],'Minor 6th':[{fret:0,finger:'1'},{fret:2,finger:'3'},{fret:2,finger:'4'},{fret:0,finger:'1'},{fret:2,finger:'?'},{fret:0,finger:'1'}],'Diminished':[{fret:0,finger:'1'},{fret:1,finger:'2'},{fret:2,finger:'3'},{fret:0,finger:'1'},{fret:2,finger:'4'},{fret:0,finger:'1'}],'Suspended 2nd':[{fret:0,finger:'1'},{fret:2,finger:'3'},{fret:2,finger:'4'},{fret:2,finger:'2'},{fret:0,finger:'1'},{fret:0,finger:'1'}],'Suspended 4th':[{fret:0,finger:'1'},{fret:2,finger:'1'},{fret:2,finger:'1'},{fret:0,finger:'1'},{fret:0,finger:'1'},{fret:0,finger:'1'}]},
-                'F#':{'Major':[{fret:1,finger:'1'},{fret:3,finger:'3'},{fret:3,finger:'4'},{fret:2,finger:'2'},{fret:1,finger:'1'},{fret:1,finger:'1'}],'Minor':[{fret:1,finger:'1'},{fret:3,finger:'3'},{fret:3,finger:'4'},{fret:1,finger:'1'},{fret:1,finger:'1'},{fret:1,finger:'1'}],'Dominant 7th':[{fret:1,finger:'1'},{fret:3,finger:'1'},{fret:1,finger:'2'},{fret:2,finger:'3'},{fret:1,finger:'1'},{fret:1,finger:'1'}],'Major 7th':[{fret:1,finger:'1'},{fret:3,finger:'1'},{fret:2,finger:'2'},{fret:2,finger:'3'},{fret:1,finger:'1'},{fret:1,finger:'1'}],'Minor 7th':[{fret:1,finger:'1'},{fret:3,finger:'1'},{fret:1,finger:'1'},{fret:1,finger:'1'},{fret:1,finger:'1'},{fret:1,finger:'1'}],'Major 6th':[{fret:1,finger:'1'},{fret:3,finger:'1'},{fret:3,finger:'1'},{fret:2,finger:'2'},{fret:3,finger:'4'},{fret:1,finger:'1'}],'Minor 6th':[{fret:1,finger:'1'},{fret:3,finger:'1'},{fret:3,finger:'1'},{fret:1,finger:'1'},{fret:3,finger:'4'},{fret:1,finger:'1'}],'Diminished':[{fret:1,finger:'1'},{fret:2,finger:'2'},{fret:3,finger:'3'},{fret:1,finger:'1'},{fret:3,finger:'4'},{fret:1,finger:'1'}],'Suspended 2nd':[{fret:1,finger:'1'},{fret:3,finger:'3'},{fret:3,finger:'4'},{fret:3,finger:'2'},{fret:1,finger:'1'},{fret:1,finger:'1'}],'Suspended 4th':[{fret:1,finger:'1'},{fret:3,finger:'1'},{fret:3,finger:'1'},{fret:1,finger:'1'},{fret:1,finger:'1'},{fret:1,finger:'1'}]},
-                'G': {'Major':[{fret:2,finger:'2'},{fret:1,finger:'1'},{fret:-1,finger:'O'},{fret:-1,finger:'O'},{fret:-1,finger:'O'},{fret:2,finger:'3'}],'Minor':[{fret:2,finger:'1'},{fret:4,finger:'3'},{fret:4,finger:'4'},{fret:2,finger:'1'},{fret:2,finger:'1'},{fret:2,finger:'1'}],'Dominant 7th':[{fret:2,finger:'2'},{fret:1,finger:'1'},{fret:-1,finger:'O'},{fret:-1,finger:'O'},{fret:-1,finger:'O'},{fret:0,finger:'T'}],'Major 7th':[{fret:2,finger:'2'},{fret:1,finger:'1'},{fret:-1,finger:'O'},{fret:-1,finger:'O'},{fret:-1,finger:'O'},{fret:1,finger:'3'}],'Minor 7th':[{fret:2,finger:'1'},{fret:4,finger:'1'},{fret:2,finger:'2'},{fret:2,finger:'3'},{fret:2,finger:'1'},{fret:2,finger:'1'}],'Major 6th':[{fret:2,finger:'2'},{fret:1,finger:'1'},{fret:-1,finger:'O'},{fret:-1,finger:'O'},{fret:2,finger:'4'},{fret:2,finger:'3'}],'Minor 6th':[{fret:2,finger:'1'},{fret:4,finger:'1'},{fret:2,finger:'2'},{fret:2,finger:'1'},{fret:4,finger:'4'},{fret:2,finger:'1'}],'Diminished':[{fret:2,finger:'2'},{fret:3,finger:'3'},{fret:1,finger:'1'},{fret:2,finger:'4'},{fret:null,finger:'X'},{fret:null,finger:'X'}],'Suspended 2nd':[{fret:2,finger:'1'},{fret:4,finger:'3'},{fret:-1,finger:'O'},{fret:-1,finger:'O'},{fret:-1,finger:'O'},{fret:2,finger:'2'}],'Suspended 4th':[{fret:2,finger:'2'},{fret:0,finger:'O'},{fret:-1,finger:'O'},{fret:-1,finger:'O'},{fret:0,finger:'1'},{fret:2,finger:'3'}]},
-                'G#':{'Major':[{fret:3,finger:'1'},{fret:5,finger:'3'},{fret:5,finger:'4'},{fret:4,finger:'2'},{fret:3,finger:'1'},{fret:3,finger:'1'}],'Minor':[{fret:3,finger:'1'},{fret:5,finger:'3'},{fret:5,finger:'4'},{fret:3,finger:'1'},{fret:3,finger:'1'},{fret:3,finger:'1'}],'Dominant 7th':[{fret:3,finger:'1'},{fret:5,finger:'1'},{fret:3,finger:'2'},{fret:4,finger:'3'},{fret:3,finger:'1'},{fret:3,finger:'1'}],'Major 7th':[{fret:3,finger:'1'},{fret:5,finger:'1'},{fret:4,finger:'2'},{fret:4,finger:'3'},{fret:3,finger:'1'},{fret:3,finger:'1'}],'Minor 7th':[{fret:3,finger:'1'},{fret:5,finger:'1'},{fret:3,finger:'1'},{fret:3,finger:'1'},{fret:3,finger:'1'},{fret:3,finger:'1'}],'Major 6th':[{fret:3,finger:'1'},{fret:5,finger:'1'},{fret:5,finger:'1'},{fret:4,finger:'2'},{fret:5,finger:'4'},{fret:3,finger:'1'}],'Minor 6th':[{fret:3,finger:'1'},{fret:5,finger:'1'},{fret:5,finger:'1'},{fret:3,finger:'1'},{fret:5,finger:'4'},{fret:3,finger:'1'}],'Diminished':[{fret:3,finger:'2'},{fret:4,finger:'3'},{fret:2,finger:'1'},{fret:3,finger:'4'},{fret:null,finger:'X'},{fret:null,finger:'X'}],'Suspended 2nd':[{fret:3,finger:'1'},{fret:5,finger:'3'},{fret:5,finger:'4'},{fret:5,finger:'2'},{fret:3,finger:'1'},{fret:3,finger:'1'}],'Suspended 4th':[{fret:3,finger:'1'},{fret:5,finger:'1'},{fret:5,finger:'1'},{fret:3,finger:'1'},{fret:3,finger:'1'},{fret:3,finger:'1'}]},
-                'A': {'Major':[{fret:null,finger:'X'},{fret:-1,finger:'O'},{fret:1,finger:'2'},{fret:1,finger:'3'},{fret:1,finger:'4'},{fret:-1,finger:'O'}],'Minor':[{fret:null,finger:'X'},{fret:-1,finger:'O'},{fret:1,finger:'2'},{fret:1,finger:'3'},{fret:0,finger:'1'},{fret:-1,finger:'O'}],'Dominant 7th':[{fret:null,finger:'X'},{fret:-1,finger:'O'},{fret:1,finger:'2'},{fret:-1,finger:'O'},{fret:1,finger:'3'},{fret:-1,finger:'O'}],'Major 7th':[{fret:null,finger:'X'},{fret:-1,finger:'O'},{fret:1,finger:'2'},{fret:0,finger:'1'},{fret:1,finger:'3'},{fret:-1,finger:'O'}],'Minor 7th':[{fret:null,finger:'X'},{fret:-1,finger:'O'},{fret:1,finger:'2'},{fret:-1,finger:'O'},{fret:0,finger:'1'},{fret:-1,finger:'O'}],'Major 6th':[{fret:null,finger:'X'},{fret:-1,finger:'O'},{fret:1,finger:'2'},{fret:1,finger:'3'},{fret:1,finger:'4'},{fret:1,finger:'?'}],'Minor 6th':[{fret:null,finger:'X'},{fret:-1,finger:'O'},{fret:1,finger:'3'},{fret:1,finger:'4'},{fret:0,finger:'2'},{fret:1,finger:'1'}],'Diminished':[{fret:null,finger:'X'},{fret:-1,finger:'O'},{fret:0,finger:'1'},{fret:1,finger:'3'},{fret:0,finger:'2'},{fret:null,finger:'X'}],'Suspended 2nd':[{fret:null,finger:'X'},{fret:-1,finger:'O'},{fret:1,finger:'2'},{fret:1,finger:'3'},{fret:-1,finger:'O'},{fret:-1,finger:'O'}],'Suspended 4th':[{fret:null,finger:'X'},{fret:-1,finger:'O'},{fret:1,finger:'1'},{fret:1,finger:'2'},{fret:2,finger:'3'},{fret:-1,finger:'O'}]},
-                'A#':{'Major':[{fret:null,finger:'X'},{fret:0,finger:'1'},{fret:2,finger:'3'},{fret:2,finger:'4'},{fret:2,finger:'2'},{fret:0,finger:'1'}],'Minor':[{fret:null,finger:'X'},{fret:0,finger:'1'},{fret:2,finger:'3'},{fret:2,finger:'4'},{fret:1,finger:'2'},{fret:0,finger:'1'}],'Dominant 7th':[{fret:null,finger:'X'},{fret:0,finger:'1'},{fret:2,finger:'1'},{fret:0,finger:'2'},{fret:1,finger:'3'},{fret:0,finger:'1'}],'Major 7th':[{fret:null,finger:'X'},{fret:0,finger:'1'},{fret:2,finger:'1'},{fret:1,finger:'2'},{fret:2,finger:'4'},{fret:0,finger:'1'}],'Minor 7th':[{fret:null,finger:'X'},{fret:0,finger:'1'},{fret:2,finger:'1'},{fret:0,finger:'1'},{fret:1,finger:'2'},{fret:0,finger:'1'}],'Major 6th':[{fret:null,finger:'X'},{fret:0,finger:'1'},{fret:2,finger:'1'},{fret:2,finger:'1'},{fret:2,finger:'1'},{fret:3,finger:'4'}],'Minor 6th':[{fret:null,finger:'X'},{fret:0,finger:'1'},{fret:2,finger:'1'},{fret:2,finger:'1'},{fret:1,finger:'1'},{fret:3,finger:'4'}],'Diminished':[{fret:null,finger:'X'},{fret:0,finger:'1'},{fret:1,finger:'2'},{fret:2,finger:'4'},{fret:1,finger:'3'},{fret:null,finger:'X'}],'Suspended 2nd':[{fret:null,finger:'X'},{fret:0,finger:'1'},{fret:2,finger:'1'},{fret:2,finger:'1'},{fret:0,finger:'1'},{fret:0,finger:'1'}],'Suspended 4th':[{fret:null,finger:'X'},{fret:0,finger:'1'},{fret:2,finger:'2'},{fret:2,finger:'3'},{fret:3,finger:'4'},{fret:0,finger:'1'}]},
-                'B': {'Major':[{fret:null,finger:'X'},{fret:1,finger:'1'},{fret:3,finger:'3'},{fret:3,finger:'4'},{fret:3,finger:'2'},{fret:1,finger:'1'}],'Minor':[{fret:null,finger:'X'},{fret:1,finger:'1'},{fret:3,finger:'3'},{fret:3,finger:'4'},{fret:2,finger:'2'},{fret:1,finger:'1'}],'Dominant 7th':[{fret:null,finger:'X'},{fret:1,finger:'2'},{fret:0,finger:'1'},{fret:1,finger:'3'},{fret:-1,finger:'O'},{fret:1,finger:'4'}],'Major 7th':[{fret:null,finger:'X'},{fret:1,finger:'1'},{fret:3,finger:'2'},{fret:2,finger:'3'},{fret:3,finger:'4'},{fret:1,finger:'1'}],'Minor 7th':[{fret:null,finger:'X'},{fret:1,finger:'2'},{fret:-1,finger:'O'},{fret:1,finger:'3'},{fret:-1,finger:'O'},{fret:1,finger:'4'}],'Major 6th':[{fret:null,finger:'X'},{fret:1,finger:'1'},{fret:3,finger:'1'},{fret:3,finger:'1'},{fret:3,finger:'1'},{fret:4,finger:'4'}],'Minor 6th':[{fret:null,finger:'X'},{fret:1,finger:'1'},{fret:3,finger:'1'},{fret:3,finger:'1'},{fret:2,finger:'1'},{fret:4,finger:'4'}],'Diminished':[{fret:null,finger:'X'},{fret:1,finger:'1'},{fret:2,finger:'2'},{fret:3,finger:'4'},{fret:2,finger:'3'},{fret:null,finger:'X'}],'Suspended 2nd':[{fret:null,finger:'X'},{fret:1,finger:'1'},{fret:3,finger:'2'},{fret:3,finger:'3'},{fret:1,finger:'1'},{fret:1,finger:'1'}],'Suspended 4th':[{fret:null,finger:'X'},{fret:1,finger:'1'},{fret:3,finger:'2'},{fret:3,finger:'3'},{fret:4,finger:'4'},{fret:1,finger:'1'}]}
-            };
             
-            const ZEITLER_SCALES_RAW = `[{"name":"Ionian","steps":"2212221"},{"name":"Dorian","steps":"2122212"},{"name":"Phrygian","steps":"1222122"},{"name":"Lydian","steps":"2221221"},{"name":"Mixolydian","steps":"2212212"},{"name":"Aeolian","steps":"2122122"},{"name":"Locrian","steps":"1221222"},{"name":"Ionythian","steps":"4122111"},{"name":"Aeolyrian","steps":"1221114"},{"name":"Gorian","steps":"2211141"},{"name":"Aeolodian","steps":"2111412"},{"name":"Doptian","steps":"1114122"},{"name":"Aeraphian","steps":"1141221"},{"name":"Zacrian","steps":"1412211"},{"name":"Ionarian","steps":"4113111"},{"name":"Dynian","steps":"1131114"},{"name":"Zydian","steps":"1311141"},{"name":"Zathian","steps":"3111411"},{"name":"Radian","steps":"1114113"},{"name":"Stonian","steps":"1141131"},{"name":"Syptian","steps":"1411311"},{"name":"Aeolacrian","steps":"4111311"},{"name":"Zythian","steps":"1113114"},{"name":"Dyrian","steps":"1131141"},{"name":"Koptian","steps":"1311411"},{"name":"Thocrian","steps":"3114111"},{"name":"Aeolanian","steps":"1141113"},{"name":"Danian","steps":"1411131"},{"name":"Zogian","steps":"4111221"},{"name":"Epyrian","steps":"1112214"},{"name":"Lycrian","steps":"1122141"},{"name":"Daptian","steps":"1221411"},{"name":"Kygian","steps":"2214111"},{"name":"Mocrian","steps":"2141112"},{"name":"Zynian","steps":"1411122"},{"name":"Phrolian","steps":"3221211"},{"name":"Ionagian","steps":"2212113"},{"name":"Aeodian","steps":"2121132"},{"name":"Kycrian","steps":"1211322"},{"name":"Epygian","steps":"2113221"},{"name":"Zaptian","steps":"1132212"},{"name":"Kagian","steps":"1322121"},{"name":"Soptian","steps":"3221112"},{"name":"Ionyptian","steps":"2211123"},{"name":"Gyrian","steps":"2111232"},{"name":"Zalian","steps":"1112322"},{"name":"Stolian","steps":"1123221"},{"name":"Bylian","steps":"1232211"},{"name":"Zothian","steps":"2322111"},{"name":"Thonian","steps":"3212211"},{"name":"Phrorian","steps":"2122113"},{"name":"Stadian","steps":"1221132"},{"name":"Thodian","steps":"2211321"},{"name":"Dogian","steps":"2113212"},{"name":"Mixopyrian","steps":"1132122"},{"name":"Garian","steps":"1321221"},{"name":"Epathian","steps":"3211311"},{"name":"Mythian","steps":"2113113"},{"name":"Sogian","steps":"1131132"},{"name":"Gogian","steps":"1311321"},{"name":"Rothian","steps":"3113211"},{"name":"Katarian","steps":"1132113"},{"name":"Stylian","steps":"1321131"},{"name":"Stathian","steps":"3211122"},{"name":"Mixonyphian","steps":"2111223"},{"name":"Magian","steps":"1112232"},{"name":"Dadian","steps":"1122321"},{"name":"Aeolylian","steps":"1223211"},{"name":"Gycrian","steps":"2232111"},{"name":"Pyrian","steps":"2321112"},{"name":"Epogian","steps":"3113112"},{"name":"Lanian","steps":"1131123"},{"name":"Paptian","steps":"1311231"},{"name":"Ionacrian","steps":"3112311"},{"name":"Gathian","steps":"1123113"},{"name":"Ionyphian","steps":"1231131"},{"name":"Phrynian","steps":"2311311"},{"name":"Ionycrian","steps":"3112212"},{"name":"Phradian","steps":"1122123"},{"name":"Aeolorian","steps":"1221231"},{"name":"Gonian","steps":"2212311"},{"name":"Dalian","steps":"2123112"},{"name":"Dygian","steps":"1231122"},{"name":"Zolian","steps":"2311221"},{"name":"Aerathian","steps":"3112122"},{"name":"Sarian","steps":"1121223"},{"name":"Zoptian","steps":"1212231"},{"name":"Aeracrian","steps":"2122311"},{"name":"Byptian","steps":"1223112"},{"name":"Darian","steps":"2231121"},{"name":"Lonian","steps":"2311212"},{"name":"Aeopian","steps":"4212111"},{"name":"Rygian","steps":"2121114"},{"name":"Epynian","steps":"1211142"},{"name":"Ionogian","steps":"2111421"},{"name":"Kydian","steps":"1114212"},{"name":"Gaptian","steps":"1142121"},{"name":"Tharian","steps":"1421211"},{"name":"Epycrian","steps":"4211121"},{"name":"Gocrian","steps":"2111214"},{"name":"Katolian","steps":"1112142"},{"name":"Thoptian","steps":"1121421"},{"name":"Bagian","steps":"1214211"},{"name":"Kyrian","steps":"2142111"},{"name":"Sonian","steps":"1421112"},{"name":"Parian","steps":"4131111"},{"name":"Ionaptian","steps":"1311114"},{"name":"Thylian","steps":"3111141"},{"name":"Lolian","steps":"1111413"},{"name":"Thagian","steps":"1114131"},{"name":"Kolian","steps":"1141311"},{"name":"Dycrian","steps":"1413111"},{"name":"Stygian","steps":"4121211"},{"name":"Aeolygian","steps":"1212114"},{"name":"Aerogian","steps":"2121141"},{"name":"Dacrian","steps":"1211412"},{"name":"Baptian","steps":"2114121"},{"name":"Dagian","steps":"1141212"},{"name":"Aeolydian","steps":"1412121"},{"name":"Stythian","steps":"4121121"},{"name":"Kothian","steps":"1211214"},{"name":"Pygian","steps":"2112141"},{"name":"Rodian","steps":"1121412"},{"name":"Sorian","steps":"1214121"},{"name":"Monian","steps":"2141211"},{"name":"Thalian","steps":"1412112"},{"name":"Zorian","steps":"4121112"},{"name":"Aeragian","steps":"1211124"},{"name":"Epothian","steps":"2111241"},{"name":"Salian","steps":"1112412"},{"name":"Lyptian","steps":"1124121"},{"name":"Katonian","steps":"1241211"},{"name":"Gyphian","steps":"2412111"},{"name":"Thacrian","steps":"4112211"},{"name":"Dodian","steps":"1122114"},{"name":"Aeolyptian","steps":"1221141"},{"name":"Aeolonian","steps":"2211411"},{"name":"Aeradian","steps":"2114112"},{"name":"Aeolagian","steps":"1141122"},{"name":"Zyrian","steps":"1411221"},{"name":"Aeolathian","steps":"4112121"},{"name":"Bythian","steps":"1121214"},{"name":"Padian","steps":"1212141"},{"name":"Rolian","steps":"2121411"},{"name":"Pydian","steps":"1214112"},{"name":"Thygian","steps":"2141121"},{"name":"Katalian","steps":"1411212"},{"name":"Saptian","steps":"4111212"},{"name":"Aerodian","steps":"1112124"},{"name":"Macrian","steps":"1121241"},{"name":"Rogian","steps":"1212411"},{"name":"Boptian","steps":"2124111"},{"name":"Stogian","steps":"1241112"},{"name":"Thynian","steps":"2411121"},{"name":"Thycrian","steps":"4111131"},{"name":"Aeoladian","steps":"1111314"},{"name":"Dylian","steps":"1113141"},{"name":"Eponian","steps":"1131411"},{"name":"Katygian","steps":"1314111"},{"name":"Starian","steps":"3141111"},{"name":"Phrathian","steps":"1411113"},{"name":"Stalian","steps":"3311211"},{"name":"Stoptian","steps":"3112113"},{"name":"Zygian","steps":"1121133"},{"name":"Kataptian","steps":"1211331"},{"name":"Aeolaptian","steps":"2113311"},{"name":"Pothian","steps":"1133112"},{"name":"Bygian","steps":"1331121"},{"name":"Morian","steps":"3231111"},{"name":"Rycrian","steps":"2311113"},{"name":"Ronian","steps":"3111132"},{"name":"Stycrian","steps":"1111323"},{"name":"Katorian","steps":"1113231"},{"name":"Epythian","steps":"1132311"},{"name":"Kaptian","steps":"1323111"},{"name":"Phraptian","steps":"3222111"},{"name":"Bacrian","steps":"2221113"},{"name":"Katythian","steps":"2211132"},{"name":"Madian","steps":"2111322"},{"name":"Aerygian","steps":"1113222"},{"name":"Pylian","steps":"1132221"},{"name":"Ionathian","steps":"1322211"},{"name":"Katocrian","steps":"3213111"},{"name":"Phryptian","steps":"2131113"},{"name":"Katynian","steps":"1311132"},{"name":"Aerycrian","steps":"3111321"},{"name":"Ganian","steps":"1113213"},{"name":"Eparian","steps":"1132131"},{"name":"Lyrian","steps":"1321311"},{"name":"Ionopian","steps":"3212112"},{"name":"Aeologian","steps":"2121123"},{"name":"Zadian","steps":"1211232"},{"name":"Sygian","steps":"2112321"},{"name":"Phralian","steps":"1123212"},{"name":"Phrogian","steps":"1232121"},{"name":"Rathian","steps":"2321211"},{"name":"Rythian","steps":"3211212"},{"name":"Donian","steps":"2112123"},{"name":"Aeoloptimic","steps":"1121232"},{"name":"Panian","steps":"1212321"},{"name":"Lodian","steps":"2123211"},{"name":"Solian","steps":"1232112"},{"name":"Ionolian","steps":"2321121"},{"name":"Laptian","steps":"3211131"},{"name":"Lygian","steps":"2111313"},{"name":"Logian","steps":"1113132"},{"name":"Lalian","steps":"1131321"},{"name":"Sothian","steps":"1313211"},{"name":"Phrocrian","steps":"3132111"},{"name":"Thogian","steps":"1321113"},{"name":"Katathian","steps":"3131211"},{"name":"Modian","steps":"1312113"},{"name":"Barian","steps":"3121131"},{"name":"Mixolocrian","steps":"1211313"},{"name":"Sagian","steps":"2113131"},{"name":"Aeolothian","steps":"1131312"},{"name":"Socrian","steps":"1313121"},{"name":"Tholian","steps":"3131121"},{"name":"Ralian","steps":"1311213"},{"name":"Syrian","steps":"3112131"},{"name":"Stodian","steps":"1121313"},{"name":"Ionocrian","steps":"1213131"},{"name":"Zycrian","steps":"2131311"},{"name":"Ionygian","steps":"1313112"},{"name":"Zarian","steps":"3131112"},{"name":"Phrythian","steps":"1311123"},{"name":"Rorian","steps":"3111231"},{"name":"Bolian","steps":"1112313"},{"name":"Bothian","steps":"1123131"},{"name":"Katadian","steps":"1231311"},{"name":"Kodian","steps":"2313111"},{"name":"Ranian","steps":"3123111"},{"name":"Ladian","steps":"1231113"},{"name":"Podian","steps":"2311131"},{"name":"Ionothian","steps":"3111312"},{"name":"Kanian","steps":"1113123"},{"name":"Zylian","steps":"1131231"},{"name":"Zodian","steps":"1312311"},{"name":"Golian","steps":"3122211"},{"name":"Dyptian","steps":"1222113"},{"name":"Ryphian","steps":"2221131"},{"name":"Gylian","steps":"2211312"},{"name":"Aeolycrian","steps":"2113122"},{"name":"Pynian","steps":"1131222"},{"name":"Zanian","steps":"1312221"},{"name":"Palian","steps":"3122121"},{"name":"Stothian","steps":"1221213"},{"name":"Aerorian","steps":"2212131"},{"name":"Katagian","steps":"2121312"},{"name":"Phronian","steps":"1213122"},{"name":"Banian","steps":"2131221"},{"name":"Aeronian","steps":"1312212"},{"name":"Loptian","steps":"3121311"},{"name":"Ionodian","steps":"1213113"},{"name":"Bogian","steps":"2131131"},{"name":"Mogian","steps":"1311312"},{"name":"Docrian","steps":"3113121"},{"name":"Epadian","steps":"1131213"},{"name":"Aerynian","steps":"1312131"},{"name":"Bycrian","steps":"3121221"},{"name":"Pathian","steps":"1212213"},{"name":"Mydian","steps":"2122131"},{"name":"Thyptian","steps":"1221312"},{"name":"Phrothian","steps":"2213121"},{"name":"Katycrian","steps":"2131212"},{"name":"Ionalian","steps":"1312122"},{"name":"Dolian","steps":"3112221"},{"name":"Porian","steps":"1122213"},{"name":"Aerylian","steps":"1222131"},{"name":"Zagian","steps":"2221311"},{"name":"Lagian","steps":"2213112"},{"name":"Tyrian","steps":"2131122"},{"name":"Mixonorian","steps":"1311222"},{"name":"Pagian","steps":"3111222"},{"name":"Aeolythian","steps":"1112223"},{"name":"Molian","steps":"1122231"},{"name":"Staptian","steps":"1222311"},{"name":"Mothian","steps":"2223111"},{"name":"Aeranian","steps":"2231112"},{"name":"Ragian","steps":"2311122"},{"name":"Larian","steps":"2222121"},{"name":"Lythian","steps":"2221212"},{"name":"Stydian","steps":"2212122"},{"name":"Lorian","steps":"2121222"},{"name":"Ionadian","steps":"1212222"},{"name":"Bocrian","steps":"2122221"},{"name":"Mixolythian","steps":"1222212"},{"name":"Thadian","steps":"4311111"},{"name":"Sanian","steps":"3111114"},{"name":"Ionydian","steps":"1111143"},{"name":"Epydian","steps":"1111431"},{"name":"Katydian","steps":"1114311"},{"name":"Mathian","steps":"1143111"},{"name":"Aeryptian","steps":"1431111"},{"name":"Pythian","steps":"4221111"},{"name":"Katylian","steps":"2211114"},{"name":"Bydian","steps":"2111142"},{"name":"Bynian","steps":"1111422"},{"name":"Galian","steps":"1114221"},{"name":"Zonian","steps":"1142211"},{"name":"Myrian","steps":"1422111"},{"name":"Katogian","steps":"4211211"},{"name":"Stacrian","steps":"2112114"},{"name":"Styrian","steps":"1121142"},{"name":"Ionyrian","steps":"1211421"},{"name":"Phrodian","steps":"2114211"},{"name":"Pycrian","steps":"1142112"},{"name":"Gyptian","steps":"1421121"},{"name":"Katacrian","steps":"4112112"},{"name":"Sodian","steps":"1121124"},{"name":"Bathian","steps":"1211241"},{"name":"Mylian","steps":"2112411"},{"name":"Godian","steps":"1124112"},{"name":"Thorian","steps":"1241121"},{"name":"Zocrian","steps":"2411211"},{"name":"Stanian","steps":"4111122"},{"name":"Epanian","steps":"1111224"},{"name":"Konian","steps":"1112241"},{"name":"Stocrian","steps":"1122411"},{"name":"Kalian","steps":"1224111"},{"name":"Phroptian","steps":"2241111"},{"name":"Dydian","steps":"2411112"},{"name":"Katyptian","steps":"4111113"},{"name":"Epodian","steps":"1111134"},{"name":"Mygian","steps":"1111341"},{"name":"Pacrian","steps":"1113411"},{"name":"Aerocrian","steps":"1134111"},{"name":"Aeolarian","steps":"1341111"},{"name":"Kythian","steps":"3411111"},{"name":"Bonian","steps":"3321111"},{"name":"Badian","steps":"3211113"},{"name":"Katodian","steps":"2111133"},{"name":"Sadian","steps":"1111332"},{"name":"Dothian","steps":"1113321"},{"name":"Moptian","steps":"1133211"},{"name":"Aeryrian","steps":"1332111"},{"name":"Epagian","steps":"3312111"},{"name":"Raptian","steps":"3121113"},{"name":"Epolian","steps":"1211133"},{"name":"Sythian","steps":"2111331"},{"name":"Sydian","steps":"1113312"},{"name":"Epocrian","steps":"1133121"},{"name":"Kylian","steps":"1331211"},{"name":"Gacrian","steps":"3311121"},{"name":"Borian","steps":"3111213"},{"name":"Sycrian","steps":"1112133"},{"name":"Gadian","steps":"1121331"},{"name":"Aeolocrian","steps":"1213311"},{"name":"Mixodorian","steps":"2133111"},{"name":"Dathian","steps":"1331112"},{"name":"Katoptian","steps":"3311112"},{"name":"Ponian","steps":"3111123"},{"name":"Kadian","steps":"1111233"},{"name":"Gynian","steps":"1112331"},{"name":"Thyphian","steps":"1123311"},{"name":"Polian","steps":"1233111"},{"name":"Thanian","steps":"2331111"},{"name":"Epacrian","steps":"3221121"},{"name":"Sathian","steps":"2211213"},{"name":"Lathian","steps":"2112132"},{"name":"Aeralian","steps":"1121322"},{"name":"Kynian","steps":"1213221"},{"name":"Stynian","steps":"2132211"},{"name":"Epyphian","steps":"1322112"},{"name":"Pogian","steps":"3212121"},{"name":"Aeraptian","steps":"2121213"},{"name":"Epylimic","steps":"1212132"},{"name":"Gamian","steps":"2121321"},{"name":"Kathian","steps":"1213212"},{"name":"Lylian","steps":"2132121"},{"name":"Epalian","steps":"1321212"},{"name":"Eporian","steps":"3211221"},{"name":"Rylian","steps":"2112213"},{"name":"Epaptian","steps":"1122132"},{"name":"Byrian","steps":"1221321"},{"name":"Katanian","steps":"2213211"},{"name":"Katyrian","steps":"2132112"},{"name":"Rynian","steps":"1321122"},{"name":"Korian","steps":"3122112"},{"name":"Lynian","steps":"1221123"},{"name":"Malian","steps":"2211231"},{"name":"Synian","steps":"2112312"},{"name":"Phragian","steps":"1123122"},{"name":"Manian","steps":"1231221"},{"name":"Marian","steps":"2312211"},{"name":"Mycrian","steps":"3121212"},{"name":"Ionorian","steps":"1212123"},{"name":"Phrydian","steps":"2121231"},{"name":"Zyptian","steps":"1212312"},{"name":"Katothian","steps":"2123121"},{"name":"Phrylimic","steps":"1231212"},{"name":"Kocrian","steps":"2312121"},{"name":"Ionanian","steps":"3121122"},{"name":"Aerothian","steps":"1211223"},{"name":"Stagian","steps":"2112231"},{"name":"Lothian","steps":"1122312"},{"name":"Phrycrian","steps":"1223121"},{"name":"Kyptian","steps":"2231211"},{"name":"Ionylian","steps":"2312112"},{"name":"Gydian","steps":"4211112"},{"name":"Kogian","steps":"2111124"},{"name":"Rarian","steps":"1111242"},{"name":"Aerolian","steps":"1112421"},{"name":"Karian","steps":"1124211"},{"name":"Myptian","steps":"1242111"},{"name":"Rydian","steps":"2421111"},{"name":"Aeolynian","steps":"2222211"},{"name":"Aeroptian","steps":"2222112"},{"name":"Phryrian","steps":"2221122"},{"name":"Gothian","steps":"2211222"},{"name":"Storian","steps":"2112222"},{"name":"Pyptian","steps":"1122222"},{"name":"Thydian","steps":"1222221"},{"name":"Aerycryllian","steps":"2111211111"},{"name":"Gadyllian","steps":"1112111112"},{"name":"Solyllian","steps":"1121111121"},{"name":"Zyphyllian","steps":"1211111211"},{"name":"Garyllian","steps":"2111112111"},{"name":"Soryllian","steps":"1111121112"},{"name":"Godyllian","steps":"1111211121"},{"name":"Epityllian","steps":"1112111211"},{"name":"Ionyllian","steps":"1121112111"},{"name":"Aeoryllian","steps":"1211121111"},{"name":"Katoryllian","steps":"3111111111"},{"name":"Dodyllian","steps":"1111111113"},{"name":"Zogyllian","steps":"1111111131"},{"name":"Madyllian","steps":"1111111311"},{"name":"Dycryllian","steps":"1111113111"},{"name":"Aeogyllian","steps":"1111131111"},{"name":"Dydyllian","steps":"1111311111"},{"name":"Thogyllian","steps":"1113111111"},{"name":"Rygyllian","steps":"1131111111"},{"name":"Bathyllian","steps":"1311111111"},{"name":"Sydyllian","steps":"2211111111"},{"name":"Katogyllian","steps":"2111111112"},{"name":"Mixodyllian","steps":"1111111122"},{"name":"Aeradyllian","steps":"1111111221"},{"name":"Ryptyllian","steps":"1111112211"},{"name":"Loptyllian","steps":"1111122111"},{"name":"Kataphyllian","steps":"1111221111"},{"name":"Phradyllian","steps":"1112211111"},{"name":"Dagyllian","steps":"1122111111"},{"name":"Katyllian","steps":"1221111111"},{"name":"Gothyllian","steps":"2121111111"},{"name":"Lythyllian","steps":"1211111112"},{"name":"Bacryllian","steps":"2111111121"},{"name":"Aerygyllian","steps":"1111111212"},{"name":"Dathyllian","steps":"1111112121"},{"name":"Boptyllian","steps":"1111121211"},{"name":"Bagyllian","steps":"1111212111"},{"name":"Mathyllian","steps":"1112121111"},{"name":"Styptyllian","steps":"1121211111"},{"name":"Zolyllian","steps":"1212111111"},{"name":"Staptyllian","steps":"2112111111"},{"name":"Danyllian","steps":"1121111112"},{"name":"Goptyllian","steps":"1211111121"},{"name":"Epocryllian","steps":"2111111211"},{"name":"Rocryllian","steps":"1111112112"},{"name":"Zyryllian","steps":"1111121121"},{"name":"Sagyllian","steps":"1111211211"},{"name":"Epinyllian","steps":"1112112111"},{"name":"Katagyllian","steps":"1121121111"},{"name":"Ragyllian","steps":"1211211111"},{"name":"Thydyllian","steps":"2111121111"},{"name":"Epiryllian","steps":"1111211112"},{"name":"Lyryllian","steps":"1112111121"},{"name":"Mogyllian","steps":"1121111211"},{"name":"Katodyllian","steps":"1211112111"},{"name":"Aerycratic","steps":"21111111111"},{"name":"Monatic","steps":"11111111112"},{"name":"Solatic","steps":"11111111121"},{"name":"Zylatic","steps":"11111111211"},{"name":"Mixolatic","steps":"11111112111"},{"name":"Soratic","steps":"11111121111"},{"name":"Godatic","steps":"11111211111"},{"name":"Eptatic","steps":"11112111111"},{"name":"Ionatic","steps":"11121111111"},{"name":"Aeolatic","steps":"11211111111"},{"name":"Thydatic","steps":"12111111111"},{"name":"Chromatic","steps":"111111111111"},{"name":"Minoric","steps":"444"},{"name":"Thaptic","steps":"4341"},{"name":"Lothic","steps":"3414"},{"name":"Phratic","steps":"4143"},{"name":"Aerathic","steps":"1434"},{"name":"Epathic","steps":"4323"},{"name":"Mynic","steps":"3234"},{"name":"Rothic","steps":"2343"},{"name":"Eporic","steps":"3432"},{"name":"Zyphic","steps":"4431"},{"name":"Epogic","steps":"4314"},{"name":"Lanic","steps":"3144"},{"name":"Pyrric","steps":"1443"},{"name":"Aeoloric","steps":"4413"},{"name":"Gonic","steps":"4134"},{"name":"Dalic","steps":"1344"},{"name":"Dygic","steps":"3441"},{"name":"Daric","steps":"4332"},{"name":"Lonic","steps":"3324"},{"name":"Phradic","steps":"3243"},{"name":"Bolic","steps":"2433"},{"name":"Saric","steps":"4233"},{"name":"Zoptic","steps":"2334"},{"name":"Aeraphic","steps":"3342"},{"name":"Byptic","steps":"3423"},{"name":"Aeolic","steps":"4422"},{"name":"Koptic","steps":"4224"},{"name":"Mixolyric","steps":"2244"},{"name":"Lydic","steps":"2442"},{"name":"Stathic","steps":"4242"},{"name":"Dadic","steps":"2424"},{"name":"Phrynic","steps":"3333"},{"name":"Epathitonic","steps":"32322"},{"name":"Mynitonic","steps":"23223"},{"name":"Rocritonic","steps":"32232"},{"name":"Pentatonic","steps":"22323"},{"name":"Thaptitonic","steps":"23232"},{"name":"Magitonic","steps":"43221"},{"name":"Daditonic","steps":"32214"},{"name":"Aeolyphritonic","steps":"22143"},{"name":"Gycritonic","steps":"21432"},{"name":"Pyritonic","steps":"14322"},{"name":"Gathitonic","steps":"42321"},{"name":"Ionitonic","steps":"23214"},{"name":"Phrynitonic","steps":"32142"},{"name":"Stathitonic","steps":"21423"},{"name":"Thalitonic","steps":"14232"},{"name":"Zolitonic","steps":"42141"},{"name":"Epogitonic","steps":"21414"},{"name":"Lanitonic","steps":"14142"},{"name":"Paptitonic","steps":"41421"},{"name":"Ionacritonic","steps":"14214"},{"name":"Phraditonic","steps":"41412"},{"name":"Aeoloritonic","steps":"14124"},{"name":"Gonitonic","steps":"41241"},{"name":"Dalitonic","steps":"12414"},{"name":"Dygitonic","steps":"24141"},{"name":"Aeracritonic","steps":"41232"},{"name":"Byptitonic","steps":"12324"},{"name":"Daritonic","steps":"23241"},{"name":"Lonitonic","steps":"32412"},{"name":"Ionycritonic","steps":"24123"},{"name":"Lothitonic","steps":"41223"},{"name":"Phratonic","steps":"12234"},{"name":"Aerathitonic","steps":"22341"},{"name":"Saritonic","steps":"23412"},{"name":"Zoptitonic","steps":"34122"},{"name":"Dolitonic","steps":"44121"},{"name":"Poritonic","steps":"41214"},{"name":"Aerylitonic","steps":"12144"},{"name":"Zagitonic","steps":"21441"},{"name":"Lagitonic","steps":"14412"},{"name":"Molitonic","steps":"43311"},{"name":"Staptitonic","steps":"33114"},{"name":"Mothitonic","steps":"31143"},{"name":"Aeritonic","steps":"11433"},{"name":"Ragitonic","steps":"14331"},{"name":"Ionaditonic","steps":"43212"},{"name":"Bocritonic","steps":"32124"},{"name":"Gythitonic","steps":"21243"},{"name":"Pagitonic","steps":"12432"},{"name":"Aeolythitonic","steps":"24321"},{"name":"Zacritonic","steps":"43131"},{"name":"Laritonic","steps":"31314"},{"name":"Thacritonic","steps":"13143"},{"name":"Styditonic","steps":"31431"},{"name":"Loritonic","steps":"14313"},{"name":"Aeolyritonic","steps":"43113"},{"name":"Goritonic","steps":"31134"},{"name":"Aeoloditonic","steps":"11343"},{"name":"Doptitonic","steps":"13431"},{"name":"Aeraphitonic","steps":"34311"},{"name":"Zathitonic","steps":"42411"},{"name":"Raditonic","steps":"24114"},{"name":"Stonitonic","steps":"41142"},{"name":"Syptitonic","steps":"11424"},{"name":"Ionythitonic","steps":"14241"},{"name":"Aeolanitonic","steps":"42231"},{"name":"Danitonic","steps":"22314"},{"name":"Ionaritonic","steps":"23142"},{"name":"Dynitonic","steps":"31422"},{"name":"Zyditonic","steps":"14223"},{"name":"Aeolacritonic","steps":"42123"},{"name":"Zythitonic","steps":"21234"},{"name":"Dyritonic","steps":"12342"},{"name":"Koptitonic","steps":"23421"},{"name":"Thocritonic","steps":"34212"},{"name":"Lycritonic","steps":"41331"},{"name":"Daptitonic","steps":"13314"},{"name":"Kygitonic","steps":"33141"},{"name":"Mocritonic","steps":"31413"},{"name":"Zynitonic","steps":"14133"},{"name":"Epygitonic","steps":"41322"},{"name":"Zaptitonic","steps":"13224"},{"name":"Kagitonic","steps":"32241"},{"name":"Zogitonic","steps":"22413"},{"name":"Epyritonic","steps":"24132"},{"name":"Zothitonic","steps":"41313"},{"name":"Phrolitonic","steps":"13134"},{"name":"Ionagitonic","steps":"31341"},{"name":"Aeolapritonic","steps":"13413"},{"name":"Kyritonic","steps":"34131"},{"name":"Ionyptitonic","steps":"41133"},{"name":"Gyritonic","steps":"11334"},{"name":"Zalitonic","steps":"13341"},{"name":"Stolitonic","steps":"33411"},{"name":"Bylitonic","steps":"34113"},{"name":"Thoditonic","steps":"33231"},{"name":"Dogitonic","steps":"32313"},{"name":"Phralitonic","steps":"23133"},{"name":"Garitonic","steps":"31332"},{"name":"Soptitonic","steps":"13323"},{"name":"Kataritonic","steps":"33222"},{"name":"Sylitonic","steps":"32223"},{"name":"Thonitonic","steps":"22233"},{"name":"Phropitonic","steps":"22332"},{"name":"Staditonic","steps":"23322"},{"name":"Lyditonic","steps":"33132"},{"name":"Mythitonic","steps":"31323"},{"name":"Sogitonic","steps":"13233"},{"name":"Gothitonic","steps":"32331"},{"name":"Rothitonic","steps":"23313"},{"name":"Zylitonic","steps":"44211"},{"name":"Zoditonic","steps":"42114"},{"name":"Zaritonic","steps":"21144"},{"name":"Phrythitonic","steps":"11442"},{"name":"Rolitonic","steps":"14421"},{"name":"Ranitonic","steps":"44112"},{"name":"Laditonic","steps":"41124"},{"name":"Poditonic","steps":"11244"},{"name":"Ionothitonic","steps":"12441"},{"name":"Kanitonic","steps":"24411"},{"name":"Ryphitonic","steps":"43122"},{"name":"Gylitonic","steps":"31224"},{"name":"Aeolycritonic","steps":"12243"},{"name":"Pynitonic","steps":"22431"},{"name":"Zanitonic","steps":"24312"},{"name":"Phronitonic","steps":"42312"},{"name":"Banitonic","steps":"23124"},{"name":"Aeronitonic","steps":"31242"},{"name":"Golitonic","steps":"12423"},{"name":"Dyptitonic","steps":"24231"},{"name":"Aerynitonic","steps":"42213"},{"name":"Palitonic","steps":"22134"},{"name":"Stothitonic","steps":"21342"},{"name":"Aerophitonic","steps":"13422"},{"name":"Katagitonic","steps":"34221"},{"name":"Ionoditonic","steps":"42132"},{"name":"Bogitonic","steps":"21324"},{"name":"Mogitonic","steps":"13242"},{"name":"Docritonic","steps":"32421"},{"name":"Epaditonic","steps":"24213"},{"name":"Mixitonic","steps":"33321"},{"name":"Phrothitonic","steps":"33213"},{"name":"Katycritonic","steps":"32133"},{"name":"Ionalitonic","steps":"21333"},{"name":"Loptitonic","steps":"13332"},{"name":"Thyritonic","steps":"33312"},{"name":"Thoptitonic","steps":"33123"},{"name":"Bycritonic","steps":"31233"},{"name":"Pathitonic","steps":"12333"},{"name":"Myditonic","steps":"23331"},{"name":"Bolitonic","steps":"42222"},{"name":"Bothitonic","steps":"22224"},{"name":"Kataditonic","steps":"22242"},{"name":"Koditonic","steps":"22422"},{"name":"Tholitonic","steps":"24222"},{"name":"Epathimic","steps":"322122"},{"name":"Mynimic","steps":"221223"},{"name":"Rocrimic","steps":"212232"},{"name":"Eporimic","steps":"122322"},{"name":"Thaptimic","steps":"223221"},{"name":"Lothimic","steps":"232212"},{"name":"Dyrimic","steps":"421221"},{"name":"Koptimic","steps":"212214"},{"name":"Thocrimic","steps":"122142"},{"name":"Aeolanimic","steps":"221421"},{"name":"Danimic","steps":"214212"},{"name":"Ionarimic","steps":"142122"},{"name":"Daptimic","steps":"414111"},{"name":"Kygimic","steps":"141114"},{"name":"Mocrimic","steps":"411141"},{"name":"Zynimic","steps":"111414"},{"name":"Aeolimic","steps":"114141"},{"name":"Zythimic","steps":"141411"},{"name":"Epygimic","steps":"412311"},{"name":"Zaptimic","steps":"123114"},{"name":"Kagimic","steps":"231141"},{"name":"Zogimic","steps":"311412"},{"name":"Epyrimic","steps":"114123"},{"name":"Lycrimic","steps":"141231"},{"name":"Bylimic","steps":"412221"},{"name":"Zothimic","steps":"122214"},{"name":"Phrolimic","steps":"222141"},{"name":"Ionagimic","steps":"221412"},{"name":"Aeolaphimic","steps":"214122"},{"name":"Kycrimic","steps":"141222"},{"name":"Garimic","steps":"412212"},{"name":"Soptimic","steps":"122124"},{"name":"Ionyptimic","steps":"221241"},{"name":"Gyrimic","steps":"212412"},{"name":"Zalimic","steps":"124122"},{"name":"Stolimic","steps":"241221"},{"name":"Thonimic","steps":"411411"},{"name":"Stadimic","steps":"114114"},{"name":"Thodimic","steps":"141141"},{"name":"Mythimic","steps":"411321"},{"name":"Sogimic","steps":"113214"},{"name":"Gogimic","steps":"132141"},{"name":"Rothimic","steps":"321411"},{"name":"Katarimic","steps":"214113"},{"name":"Sylimic","steps":"141132"},{"name":"Mixolimic","steps":"323211"},{"name":"Dadimic","steps":"232113"},{"name":"Aeolyphimic","steps":"321132"},{"name":"Gycrimic","steps":"211323"},{"name":"Pyrimic","steps":"113232"},{"name":"Lydimic","steps":"132321"},{"name":"Ionacrimic","steps":"323112"},{"name":"Gathimic","steps":"231123"},{"name":"Ionynimic","steps":"311232"},{"name":"Phrynimic","steps":"112323"},{"name":"Stathimic","steps":"123231"},{"name":"Thatimic","steps":"232311"},{"name":"Dalimic","steps":"322311"},{"name":"Dygimic","steps":"223113"},{"name":"Zolimic","steps":"231132"},{"name":"Epogimic","steps":"311322"},{"name":"Lanimic","steps":"113223"},{"name":"Paptimic","steps":"132231"},{"name":"Darmic","steps":"322212"},{"name":"Lonimic","steps":"222123"},{"name":"Ionycrimic","steps":"221232"},{"name":"Phradimic","steps":"212322"},{"name":"Aeolorimic","steps":"123222"},{"name":"Gonimic","steps":"232221"},{"name":"Phracrimic","steps":"321222"},{"name":"Aerathimic","steps":"212223"},{"name":"Sarimic","steps":"122232"},{"name":"Zoptimic","steps":"222321"},{"name":"Zeracrimic","steps":"223212"},{"name":"Byptimic","steps":"232122"},{"name":"Starimic","steps":"432111"},{"name":"Phrathimic","steps":"321114"},{"name":"Saptimic","steps":"211143"},{"name":"Aerodimic","steps":"111432"},{"name":"Macrimic","steps":"114321"},{"name":"Rogimic","steps":"143211"},{"name":"Bygimic","steps":"431121"},{"name":"Thycrimic","steps":"311214"},{"name":"Aeoladimic","steps":"112143"},{"name":"Dylimic","steps":"121431"},{"name":"Eponimic","steps":"214311"},{"name":"Katygimic","steps":"143112"},{"name":"Stalimic","steps":"423111"},{"name":"Stoptimic","steps":"231114"},{"name":"Zygimic","steps":"311142"},{"name":"Kataptimic","steps":"111423"},{"name":"Aeolaptimic","steps":"114231"},{"name":"Pothimic","steps":"142311"},{"name":"Rycrimic","steps":"422121"},{"name":"Ronimic","steps":"221214"},{"name":"Stycrimic","steps":"212142"},{"name":"Katorimic","steps":"121422"},{"name":"Epythimic","steps":"214221"},{"name":"Kaptimic","steps":"142212"},{"name":"Katythimic","steps":"421311"},{"name":"Madimic","steps":"213114"},{"name":"Aerygimic","steps":"131142"},{"name":"Pylimic","steps":"311421"},{"name":"Ionathimic","steps":"114213"},{"name":"Morimic","steps":"142131"},{"name":"Aerycrimic","steps":"421131"},{"name":"Ganimic","steps":"211314"},{"name":"Eparimic","steps":"113142"},{"name":"Lyrimic","steps":"131421"},{"name":"Phraptimic","steps":"314211"},{"name":"Bacrimic","steps":"142113"},{"name":"Phralimic","steps":"413211"},{"name":"Phrogimic","steps":"132114"},{"name":"Rathimic","steps":"321141"},{"name":"Katocrimic","steps":"211413"},{"name":"Phryptimic","steps":"114132"},{"name":"Katynimic","steps":"141321"},{"name":"Solimic","steps":"413121"},{"name":"Ionolimic","steps":"131214"},{"name":"Ionophimic","steps":"312141"},{"name":"Aeologimic","steps":"121413"},{"name":"Zadimic","steps":"214131"},{"name":"Sygimic","steps":"141312"},{"name":"Thogimic","steps":"413112"},{"name":"Rythimic","steps":"131124"},{"name":"Donimic","steps":"311241"},{"name":"Aeoloptimic","steps":"112413"},{"name":"Panimic","steps":"124131"},{"name":"Lodimic","steps":"241311"},{"name":"Laptimic","steps":"412131"},{"name":"Lygimic","steps":"121314"},{"name":"Logimic","steps":"213141"},{"name":"Lalimic","steps":"131412"},{"name":"Sothimic","steps":"314121"},{"name":"Phrocrimic","steps":"141213"},{"name":"Modimic","steps":"412122"},{"name":"Barimic","steps":"121224"},{"name":"Poptimic","steps":"212241"},{"name":"Sagimic","steps":"122412"},{"name":"Aelothimic","steps":"224121"},{"name":"Socrimic","steps":"241212"},{"name":"Syrimic","steps":"412113"},{"name":"Stodimic","steps":"121134"},{"name":"Ionocrimic","steps":"211341"},{"name":"Zycrimic","steps":"113412"},{"name":"Ionygimic","steps":"134121"},{"name":"Katathimic","steps":"341211"},{"name":"Bolimic","steps":"411312"},{"name":"Bothimic","steps":"113124"},{"name":"Katadimic","steps":"131241"},{"name":"Kodimic","steps":"312411"},{"name":"Tholimic","steps":"124113"},{"name":"Ralimic","steps":"241131"},{"name":"Kanimic","steps":"411231"},{"name":"Zylimic","steps":"112314"},{"name":"Zodimic","steps":"123141"},{"name":"Zarimic","steps":"231411"},{"name":"Phrythimic","steps":"314112"},{"name":"Rorimic","steps":"141123"},{"name":"Pynimic","steps":"411132"},{"name":"Zanimic","steps":"111324"},{"name":"Ranimic","steps":"113241"},{"name":"Ladimic","steps":"132411"},{"name":"Podimic","steps":"324111"},{"name":"Ionothimic","steps":"241113"},{"name":"Kytrimic","steps":"411123"},{"name":"Golimic","steps":"111234"},{"name":"Dyptimic","steps":"112341"},{"name":"Ryrimic","steps":"123411"},{"name":"Gylimic","steps":"234111"},{"name":"Aeolycrimic","steps":"341112"},{"name":"Palimic","steps":"332211"},{"name":"Stothimic","steps":"322113"},{"name":"Aeronimic","steps":"221133"},{"name":"Katagimic","steps":"211332"},{"name":"Phronimic","steps":"113322"},{"name":"Banimic","steps":"133221"},{"name":"Ionodimic","steps":"331311"},{"name":"Bogimic","steps":"313113"},{"name":"Mogimic","steps":"131133"},{"name":"Docrimic","steps":"311331"},{"name":"Epadimic","steps":"113313"},{"name":"Aerynimic","steps":"133131"},{"name":"Mydimic","steps":"331131"},{"name":"Thyptimic","steps":"311313"},{"name":"Phrothimic","steps":"113133"},{"name":"Katycrimic","steps":"131331"},{"name":"Ionalimic","steps":"313311"},{"name":"Loptimic","steps":"133113"},{"name":"Zagimic","steps":"331122"},{"name":"Lagimic","steps":"311223"},{"name":"Thyrimic","steps":"112233"},{"name":"Thothimic","steps":"122331"},{"name":"Bycrimic","steps":"223311"},{"name":"Pathimic","steps":"233112"},{"name":"Mothimic","steps":"322131"},{"name":"Aeranimic","steps":"221313"},{"name":"Ragimic","steps":"213132"},{"name":"Dolimic","steps":"131322"},{"name":"Porimic","steps":"313221"},{"name":"Aerylimic","steps":"132213"},{"name":"Bocrimic","steps":"321312"},{"name":"Gythimic","steps":"213123"},{"name":"Pagimic","steps":"131232"},{"name":"Aeolythimic","steps":"312321"},{"name":"Molimic","steps":"123213"},{"name":"Staptimic","steps":"232131"},{"name":"Zacrimic","steps":"321231"},{"name":"Larimic","steps":"212313"},{"name":"Thacrimic","steps":"123132"},{"name":"Stydimic","steps":"231321"},{"name":"Lorimic","steps":"313212"},{"name":"Ionadimic","steps":"132123"},{"name":"Ionythimic","steps":"313131"},{"name":"Aerythimic","steps":"131313"},{"name":"Dynimic","steps":"313122"},{"name":"Zydimic","steps":"131223"},{"name":"Zathimic","steps":"312231"},{"name":"Radimic","steps":"122313"},{"name":"Stonimic","steps":"223131"},{"name":"Syptimic","steps":"231312"},{"name":"Ponimic","steps":"441111"},{"name":"Kadimic","steps":"411114"},{"name":"Gynimic","steps":"111144"},{"name":"Thydimic","steps":"111441"},{"name":"Polimic","steps":"114411"},{"name":"Thanimic","steps":"144111"},{"name":"Lathimic","steps":"431211"},{"name":"Aeralimic","steps":"312114"},{"name":"Kynimic","steps":"121143"},{"name":"Stynimic","steps":"211431"},{"name":"Epytimic","steps":"114312"},{"name":"Katoptimic","steps":"143121"},{"name":"Galimic","steps":"431112"},{"name":"Kathimic","steps":"311124"},{"name":"Lylimic","steps":"111243"},{"name":"Epalimic","steps":"112431"},{"name":"Epacrimic","steps":"124311"},{"name":"Sathimic","steps":"243111"},{"name":"Katanimic","steps":"422211"},{"name":"Katyrimic","steps":"222114"},{"name":"Rynian","steps":"221142"},{"name":"Pogimic","steps":"211422"},{"name":"Aeraptimic","steps":"114222"},{"name":"Epylimic","steps":"142221"},{"name":"Manimic","steps":"421212"},{"name":"Marimic","steps":"212124"},{"name":"Locrimic","steps":"121242"},{"name":"Rylimic","steps":"212421"},{"name":"Epatimic","steps":"124212"},{"name":"Byrimic","steps":"242121"},{"name":"Kocrimic","steps":"421113"},{"name":"Korimic","steps":"211134"},{"name":"Lynimic","steps":"111342"},{"name":"Malimic","steps":"113421"},{"name":"Synimic","steps":"134211"},{"name":"Phragimic","steps":"342111"},{"name":"Mycrimic","steps":"411222"},{"name":"Ionorimic","steps":"112224"},{"name":"Phrydimic","steps":"122241"},{"name":"Zyptimic","steps":"222411"},{"name":"Katothimic","steps":"224112"},{"name":"Phrylimic","steps":"241122"},{"name":"Aerothimic","steps":"411213"},{"name":"Stagimic","steps":"112134"},{"name":"Dorimic","steps":"121341"},{"name":"Phrycrimic","steps":"213411"},{"name":"Kyptimic","steps":"134112"},{"name":"Ionylimic","steps":"341121"},{"name":"Epynimic","steps":"333111"},{"name":"Ionogimic","steps":"331113"},{"name":"Kydimic","steps":"311133"},{"name":"Gaptimic","steps":"111333"},{"name":"Tharimic","steps":"113331"},{"name":"Ionaphimic","steps":"133311"},{"name":"Thoptimic","steps":"332121"},{"name":"Bagimic","steps":"321213"},{"name":"Kyrimic","steps":"212133"},{"name":"Sonimic","steps":"121332"},{"name":"Aeolonimic","steps":"213321"},{"name":"Rygimic","steps":"133212"},{"name":"Thagimic","steps":"332112"},{"name":"Kolimic","steps":"321123"},{"name":"Dycrimic","steps":"211233"},{"name":"Epycrimic","steps":"112332"},{"name":"Gocrimic","steps":"123321"},{"name":"Katolimic","steps":"233211"},{"name":"Dagimic","steps":"331221"},{"name":"Aeolydimic","steps":"312213"},{"name":"Parimic","steps":"122133"},{"name":"Ionaptimic","steps":"221331"},{"name":"Thylimic","steps":"213312"},{"name":"Lolimic","steps":"133122"},{"name":"Thalimic","steps":"331212"},{"name":"Stygimic","steps":"312123"},{"name":"Aeolygimic","steps":"121233"},{"name":"Aerogimic","steps":"212331"},{"name":"Dacrimic","steps":"123312"},{"name":"Baptimic","steps":"233121"},{"name":"Stythimic","steps":"323121"},{"name":"Kothimic","steps":"231213"},{"name":"Pygimic","steps":"312132"},{"name":"Rodimic","steps":"121323"},{"name":"Sorimic","steps":"213231"},{"name":"Monimic","steps":"132312"},{"name":"Aeragimic","steps":"322221"},{"name":"Epothimic","steps":"222213"},{"name":"Salimic","steps":"222132"},{"name":"Lyptimic","steps":"221322"},{"name":"Katonimic","steps":"213222"},{"name":"Gygimic","steps":"132222"},{"name":"Aeradimic","steps":"321321"},{"name":"Zyrimic","steps":"213213"},{"name":"Stylimic","steps":"132132"},{"name":"Lythimic","steps":"312312"},{"name":"Dodimic","steps":"123123"},{"name":"Katalimic","steps":"231231"},{"name":"Boptimic","steps":"312222"},{"name":"Stogimic","steps":"122223"},{"name":"Thynimic","steps":"222231"},{"name":"Aeolathimic","steps":"222312"},{"name":"Bythimic","steps":"223122"},{"name":"Padimic","steps":"231222"},{"name":"Dathimic","steps":"422112"},{"name":"Epagimic","steps":"221124"},{"name":"Raptimic","steps":"211242"},{"name":"Epolimic","steps":"112422"},{"name":"Sythimic","steps":"124221"},{"name":"Sydimic","steps":"242211"},{"name":"Gacrimic","steps":"421122"},{"name":"Borimic","steps":"211224"},{"name":"Sycrimic","steps":"112242"},{"name":"Gadimic","steps":"122421"},{"name":"Aeolocrimic","steps":"224211"},{"name":"Phrygimic","steps":"242112"},{"name":"WholeTone","steps":"222222"}]`;
             const ZEITLER_SCALE_DEFINITIONS = {};
-            let ALL_SCALE_DEFINITIONS = {};
+            let ALL_SCALE_DEFINITIONS_FOR_RECOGNITION = {};
 
             // --- STATE ---
-            let state = { strings: [], frets: 12, notes: [], fretPositions: [], currentChord: null, currentScale: null, tuningPanelVisible: true, noteDisplayMode: 'names', notesPerStringLimit: 'all', showFretNumbers: true, isRootLocked: false, isPlayerView: true, isLeftHanded: false, interactionMode: 'toggle_note', midiAccess: null, midiInputs: [], midiOutputs: [], selectedMidiInId: null, selectedMidiOutId: null, activeMidiNotes: new Map(),
+            let state = { 
+                strings: [], frets: 12, notes: [], fretPositions: [], currentChord: null, currentScale: null, tuningPanelVisible: true, noteDisplayMode: 'names', notesPerStringLimit: 'all', showFretNumbers: true, isRootLocked: false, isPlayerView: true, isLeftHanded: false, interactionMode: 'toggle_note', midiAccess: null, midiInputs: [], midiOutputs: [], selectedMidiInId: null, selectedMidiOutId: null, activeMidiNotes: new Map(),
                 masterVolume: 0.8,
                 temperament: 12,
-                // Tablature State
-                tabData: [], tabTempo: 120, tabPlayheadPosition: -1, tabIsPlaying: false, tabIntervalId: null, tabNumCols: 48,
-                // Scale Set State
+                currentChordDefs: {},
+                currentScaleDefs: {},
                 isZeitlerMode: false,
-                // Instrument Mode State
-                instrumentMode: null, overtoneFundamentalHz: null };
+                instrumentMode: null, overtoneFundamentalHz: null 
+            };
 
             // --- DOM ELEMENTS ---
             const mainLayout = document.getElementById('main-layout'), stringControlsContainer = document.getElementById('string-controls-container'), fretboardWrapper = document.getElementById('fretboard-wrapper'), fretboardContainer = document.getElementById('fretboard-container'), fretNumbersContainer = document.getElementById('fret-numbers-container');
@@ -367,6 +374,7 @@
             const recognizedChordDisplay = document.getElementById('recognized-chord-display'), recognizedScaleDisplay = document.getElementById('recognized-scale-display');
             const currentRootDisplay = document.getElementById('current-root-display'), currentNotesDisplay = document.getElementById('current-notes-display');
             const scaleTypeSelect = document.getElementById('scale-type-select'), showScaleBtn = document.getElementById('show-scale-btn'), randomScaleBtn = document.getElementById('random-scale-btn'), notesPerStringSelect = document.getElementById('notes-per-string-select');
+            const scaleSearchInput = document.getElementById('scale-search-input');
             const resetFretsBtn = document.getElementById('reset-frets'), toggleTuningBtn = document.getElementById('toggle-tuning-panel'), displayModeSelect = document.getElementById('display-mode'), setupSelect = document.getElementById('setup-select');
             const showFretNumbersBtn = document.getElementById('show-fret-numbers-btn'), showAllNotesBtn = document.getElementById('show-all-notes-btn'), reverseStringsBtn = document.getElementById('reverse-strings-btn'), leftHandedBtn = document.getElementById('left-handed-btn'), editPlayModeSelect = document.getElementById('edit-play-mode');
             const toggleScaleSetBtn = document.getElementById('toggle-scale-set-btn');
@@ -393,7 +401,6 @@
 
                 const edo = state.temperament || 12;
                 
-                // Use standard MIDI for 12-EDO.
                 if (edo === 12) {
                     const midi = frequencyToMidi(frequency);
                     return {
@@ -404,26 +411,13 @@
                         noteName: NOTE_NAMES[midi % 12]
                     };
                 }
-
-                // --- Microtonal Logic ---
-                // C0 is our reference pitch for step 0 in octave 0.
                 const C0_HZ = 16.351597831287414;
-                
-                // Formula: steps = edo * log2(f / f_base)
                 const absoluteStep = Math.round(edo * Math.log2(frequency / C0_HZ));
-
                 const octave = Math.floor(absoluteStep / edo);
                 const stepInOctave = absoluteStep % edo;
-
                 const edoData = EDO_SYSTEMS[edo] || {};
                 const noteName = (edoData.names && edoData.names[stepInOctave]) ? edoData.names[stepInOctave] : `S:${stepInOctave}`;
-
-                return {
-                    absoluteStep: absoluteStep,
-                    octave: octave,
-                    stepInOctave: stepInOctave,
-                    noteName: noteName
-                };
+                return { absoluteStep, octave, stepInOctave, noteName };
             }
             function frequencyToNoteName(frequency) { if (frequency <= 0) return "N/A"; const midiNoteNumber = frequencyToMidi(frequency); return `${NOTE_NAMES[midiNoteNumber % 12]}`; }
             function generateInitialFretPositions(temperament = 12) {
@@ -461,10 +455,10 @@
                     const pattern = VOICING_LIBRARY[rootNoteName][chordType];
                     return pattern.map((voiceData, stringIndex) => ({ string: stringIndex, fret: voiceData.fret, finger: voiceData.finger }));
                 }
-                const chordIntervals = CHORD_DEFINITIONS[chordType].intervals; const chordNoteIndexes = chordIntervals.map(i => (rootNoteIndex + i) % 12); let voicing = []; for (let i = 0; i < state.strings.length; i++) { const openStringMidi = frequencyToMidi(calculateFrequency(state.strings[i])); let bestFret = null; for (let fret = -1; fret < state.frets; fret++) { const currentNoteMidi = openStringMidi + (fret + 1); const currentNoteIndex = currentNoteMidi % 12; if (chordNoteIndexes.includes(currentNoteIndex)) { bestFret = fret; break; } } voicing.push({ string: i, fret: bestFret }); } return voicing;
+                const chordIntervals = (state.currentChordDefs[chordType] || {intervals:[]}).intervals; const chordNoteIndexes = chordIntervals.map(i => (rootNoteIndex + i) % 12); let voicing = []; for (let i = 0; i < state.strings.length; i++) { const openStringMidi = frequencyToMidi(calculateFrequency(state.strings[i])); let bestFret = null; for (let fret = -1; fret < state.frets; fret++) { const currentNoteMidi = openStringMidi + (fret + 1); const currentNoteIndex = currentNoteMidi % 12; if (chordNoteIndexes.includes(currentNoteIndex)) { bestFret = fret; break; } } voicing.push({ string: i, fret: bestFret }); } return voicing;
             }
             function recognizeChord(notes) { if (notes.length < 3) return null; const pitchClasses = [...new Set(notes.map(n => frequencyToMidi(calculateFrettedFrequency(n.string, n.fret)) % 12))].sort((a, b) => a - b); if (pitchClasses.length < 2) return null; for (const potentialRoot of pitchClasses) { const intervals = pitchClasses.map(pc => (pc - potentialRoot + 12) % 12).sort((a,b) => a - b); for (const chordName in CHORD_DEFINITIONS) { const defIntervals = CHORD_DEFINITIONS[chordName].intervals; if (intervals.length === defIntervals.length && intervals.every((val, index) => val === defIntervals[index])) { return { root: NOTE_NAMES[potentialRoot], type: chordName, rootIndex: potentialRoot }; } } } return null; }
-            function recognizeScale(notes) { const pitchClasses = [...new Set(notes.map(n => frequencyToMidi(calculateFrettedFrequency(n.string, n.fret)) % 12))].sort((a, b) => a - b); if (pitchClasses.length < 5) return null; for (const potentialRoot of pitchClasses) { const intervals = pitchClasses.map(pc => (pc - potentialRoot + 12) % 12).sort((a,b) => a - b); for (const scaleName in ALL_SCALE_DEFINITIONS) { const defIntervals = ALL_SCALE_DEFINITIONS[scaleName]; if (intervals.length === defIntervals.length && intervals.every((val, index) => val === defIntervals[index])) { return { root: NOTE_NAMES[potentialRoot], type: scaleName, rootIndex: potentialRoot }; } } } return null; }
+            function recognizeScale(notes) { const pitchClasses = [...new Set(notes.map(n => frequencyToMidi(calculateFrettedFrequency(n.string, n.fret)) % 12))].sort((a, b) => a - b); if (pitchClasses.length < 5) return null; for (const potentialRoot of pitchClasses) { const intervals = pitchClasses.map(pc => (pc - potentialRoot + 12) % 12).sort((a,b) => a - b); for (const scaleName in ALL_SCALE_DEFINITIONS_FOR_RECOGNITION) { const defIntervals = ALL_SCALE_DEFINITIONS_FOR_RECOGNITION[scaleName]; if (intervals.length === defIntervals.length && intervals.every((val, index) => val === defIntervals[index])) { return { root: NOTE_NAMES[potentialRoot], type: scaleName, rootIndex: potentialRoot }; } } } return null; }
 
             // --- RENDER & UI FUNCTIONS ---
             function renderApp() {
@@ -505,25 +499,29 @@
                     recognizedScaleDisplay.dataset.type = recognizedScale.type;
                 }
                 
-                // Hide incompatible UI elements for non-12-EDO modes
                 cofSvg.parentElement.style.display = state.temperament === 12 ? 'flex' : 'none';
                 scaleModesContainer.style.display = (state.temperament === 12 && state.currentScale) ? 'flex' : 'none';
 
                 stringControlsContainer.innerHTML = ''; fretboardContainer.innerHTML = ''; fretNumbersContainer.innerHTML = '';
-                const stringIndices = Array.from({ length: state.strings.length }, (_, k) => k);
-                if (state.isPlayerView) { stringIndices.slice().reverse().forEach(i => { const string = state.strings[i]; if(state.tuningPanelVisible) renderStringControlPanel(string, i); }); } 
-                else { stringIndices.forEach(i => { const string = state.strings[i]; if(state.tuningPanelVisible) renderStringControlPanel(string, i); }); }
-                if(state.showFretNumbers && state.frets > 0) renderFretNumbers();
-                stringIndices.slice().reverse().forEach(i => renderStringRow(state.strings[i], i));
                 
-                renderTabEditor(); // Render the tab editor
+                // Determine render order based on Player vs Spectator view
+                const stringIndices = Array.from({ length: state.strings.length }, (_, k) => k);
+                const renderOrder = state.isPlayerView ? [...stringIndices].reverse() : stringIndices;
+
+                // Render controls and strings in the determined order
+                renderOrder.forEach(i => {
+                    if(state.tuningPanelVisible) renderStringControlPanel(state.strings[i], i);
+                });
+                if(state.showFretNumbers && state.frets > 0) renderFretNumbers();
+                renderOrder.forEach(i => renderStringRow(state.strings[i], i));
+                
+                TabEditor.render();
                 updateGlobalControls(); 
                 updateFretboardModeClass();
                 attachEventListeners();
             }
             function renderStringControlPanel(string, index) {
                 const panel = document.createElement('div'); panel.className = 'string-control-panel';
-                // Visually adjust width in overtone mode
                 if (state.instrumentMode === 'overtone' && state.strings.length > 0) {
                     const fundamentalLength = state.strings[0].length;
                     panel.style.width = `${(string.length / fundamentalLength) * 100}%`;
@@ -535,7 +533,6 @@
             function renderFretNumbers() { const openSpace = document.createElement('div'); openSpace.className = 'open-string-space'; fretNumbersContainer.appendChild(openSpace); const frettedArea = document.createElement('div'); frettedArea.className = 'fretted-area'; const refFretPositions = state.fretPositions[0] || []; for (let j = 0; j < state.frets; j++) { const numEl = document.createElement('div'); numEl.className = 'fret-number'; numEl.textContent = j + 1; numEl.style.width = `${(refFretPositions[j+1] || 100) - (refFretPositions[j] || 0)}%`; frettedArea.appendChild(numEl); } fretNumbersContainer.appendChild(frettedArea); }
             function renderStringRow(string, i) {
                 const stringRow = document.createElement('div'); stringRow.className = 'string-row'; stringRow.dataset.stringIndex = i;
-                // Visually adjust width in overtone mode
                 if (state.instrumentMode === 'overtone' && state.strings.length > 0) {
                     const fundamentalLength = state.strings[0].length;
                     stringRow.style.width = `${(string.length / fundamentalLength) * 100}%`;
@@ -561,10 +558,10 @@
                             label = `${frettedFreq.toFixed(0)}Hz`;
                             break;
                         case 'intervals':
-                        case 'intervals_roman': // Fallthrough since Roman is not well-defined for microtonal
+                        case 'intervals_roman':
                             if (state.temperament === 12) {
                                 const rootNoteIndex = parseInt(rootNoteSelect.value);
-                                const rootMidi = 48 + rootNoteIndex; // C3 is base for root
+                                const rootMidi = 48 + rootNoteIndex;
                                 const intervalSemitones = edoInfo.midi - rootMidi;
                                 
                                 if (state.noteDisplayMode === 'intervals_roman') {
@@ -574,13 +571,10 @@
                                     label = note.interval || INTERVAL_NAMES[intervalSemitones] || INTERVAL_NAMES[(intervalSemitones % 12 + 12) % 12] || '?';
                                 }
                             } else {
-                                // Microtonal interval logic
                                 const rootNoteIndex12 = parseInt(rootNoteSelect.value);
-                                const rootFreq = midiToFrequency(48 + rootNoteIndex12); // Base root on C3 + 12-TET root selection
+                                const rootFreq = midiToFrequency(48 + rootNoteIndex12);
                                 const rootEdoInfo = frequencyToEdoInfo(rootFreq);
-                                
                                 const intervalSteps = edoInfo.absoluteStep - rootEdoInfo.absoluteStep;
-                                
                                 const edoData = EDO_SYSTEMS[state.temperament] || {};
                                 label = (edoData.intervals && edoData.intervals[(intervalSteps % state.temperament + state.temperament) % state.temperament]) ? edoData.intervals[(intervalSteps % state.temperament + state.temperament) % state.temperament] : `${intervalSteps}`;
                             }
@@ -601,10 +595,9 @@
             // --- EVENT LISTENERS & HANDLERS ---
             function attachEventListeners() { 
                 document.body.addEventListener('click', handleDelegatedClick); 
-                fretboardContainer.addEventListener('mousedown', handleFretDragStart);
+                fretboardContainer.addEventListener('mousedown', handleFretDragStart); 
             }
             function handleDelegatedClick(e) {
-                // Find the highest-level relevant element first.
                 const noteEl = e.target.closest('.note');
                 const fretSpace = e.target.closest('.fret-space');
                 const targetElement = noteEl || fretSpace;
@@ -617,23 +610,15 @@
                     switch (state.interactionMode) {
                         case 'toggle_note':
                             if (state.currentChord || state.currentScale) clearTheory();
-                            if (noteExists) {
-                                removeNote(stringIndex, fretIndex);
-                            } else {
-                                addNote(stringIndex, fretIndex);
-                            }
+                            if (noteExists) { removeNote(stringIndex, fretIndex); } else { addNote(stringIndex, fretIndex); }
                             break;
                         case 'insert':
                             if (state.currentChord || state.currentScale) clearTheory();
-                            if (!noteExists) {
-                                addNote(stringIndex, fretIndex);
-                            }
+                            if (!noteExists) { addNote(stringIndex, fretIndex); }
                             break;
                         case 'remove':
                             if (state.currentChord || state.currentScale) clearTheory();
-                            if (noteExists) {
-                                removeNote(stringIndex, fretIndex);
-                            }
+                            if (noteExists) { removeNote(stringIndex, fretIndex); }
                             break;
                         case 'play':
                             AudioPlayer.init();
@@ -643,7 +628,6 @@
                     return;
                 }
                 
-                // Handle other UI element clicks
                 const removeBtn = e.target.closest('.remove-string-btn'); 
                 if (removeBtn) { removeString(parseInt(removeBtn.dataset.stringIndex)); return; }
                 const recognizedChordEl = e.target.closest('#recognized-chord-display');
@@ -691,7 +675,7 @@
                         const noteEdoInfo = frequencyToEdoInfo(calculateFrettedFrequency(i, j));
                         if (noteEdoInfo && chordAbsoluteSteps.includes(noteEdoInfo.absoluteStep)) {
                             bestFret = j;
-                            break; // Found the lowest fret, move to next string
+                            break;
                         }
                     }
                     voicing.push({ string: i, fret: bestFret });
@@ -701,14 +685,14 @@
             function handleShowChord() {
                 const rootNoteIndex = parseInt(rootNoteSelect.value);
                 const chordType = chordTypeSelect.value;
-                let voicing;
+                const chordDef = state.currentChordDefs[chordType];
+                if (!chordDef) return;
 
+                let voicing;
                 if (state.temperament === 12) {
                     voicing = findChordVoicing(rootNoteIndex, chordType);
                 } else {
-                    const intervals12 = CHORD_DEFINITIONS[chordType].intervals;
-                    const edoIntervals = convertIntervalsToEdo(intervals12, state.temperament);
-                    voicing = findEdoVoicing(rootNoteIndex, edoIntervals);
+                    voicing = findEdoVoicing(rootNoteIndex, chordDef.intervals);
                 }
                 
                 clearTheory(false);
@@ -716,7 +700,7 @@
                 state.notes = voicing;
                 
                 const rootNoteName = NOTE_NAMES[rootNoteIndex];
-                const noteNames = CHORD_DEFINITIONS[chordType].intervals.map(i => NOTE_NAMES[(rootNoteIndex + i) % 12]).join(' · ');
+                const noteNames = convertIntervalsToEdo(chordDef.intervals, 12).map(i => NOTE_NAMES[(rootNoteIndex + i) % 12]).join(' · ');
                 currentRootDisplay.textContent = `Root: ${rootNoteName}`;
                 currentNotesDisplay.textContent = `${chordType} (${state.temperament}-EDO): ${noteNames}`;
 
@@ -729,34 +713,64 @@
                 state.currentScale = { root: rootNoteIndex12, type: scaleType, intervals: edoIntervals };
                 state.notesPerStringLimit = notesPerStringSelect.value;
                 
-                const rootFreq = midiToFrequency(48 + rootNoteIndex12); // C3 as reference octave
+                const rootFreq = midiToFrequency(48 + rootNoteIndex12);
                 const rootEdoInfo = frequencyToEdoInfo(rootFreq);
-                const rootAbsoluteStep = rootEdoInfo.absoluteStep;
+                const rootStepInOctave = rootEdoInfo.stepInOctave;
+                const scaleStepsInOctave = new Set(edoIntervals.map(i => (rootStepInOctave + i) % state.temperament));
 
-                const scaleAbsoluteSteps = edoIntervals.map(i => rootAbsoluteStep + i);
-
-                let allScaleNotes = [];
+                let allPossibleScaleNotes = [];
                 for (let i = 0; i < state.strings.length; i++) {
                     for (let j = -1; j < state.frets; j++) {
-                        const noteEdoInfo = frequencyToEdoInfo(calculateFrettedFrequency(i, j));
-                        if (noteEdoInfo && scaleAbsoluteSteps.includes(noteEdoInfo.absoluteStep)) {
-                            allScaleNotes.push({ string: i, fret: j });
+                        const freq = calculateFrettedFrequency(i, j);
+                        if (freq <= 0) continue;
+                        const noteEdoInfo = frequencyToEdoInfo(freq);
+                        if (noteEdoInfo && scaleStepsInOctave.has(noteEdoInfo.stepInOctave)) {
+                            allPossibleScaleNotes.push({ string: i, fret: j, freq: freq });
                         }
                     }
                 }
 
-                if (state.notesPerStringLimit === 'all') { state.notes = allScaleNotes; } 
-                else { const limit = parseInt(state.notesPerStringLimit); const notesByString = allScaleNotes.reduce((acc, note) => { (acc[note.string] = acc[note.string] || []).push(note); return acc; }, {}); state.notes = Object.values(notesByString).flatMap(stringNotes => stringNotes.slice(0, limit)); }
+                if (state.notesPerStringLimit === 'all') {
+                    state.notes = allPossibleScaleNotes;
+                } else {
+                    const limit = parseInt(state.notesPerStringLimit, 10);
+                    const sortedScaleNotes = allPossibleScaleNotes.sort((a, b) => a.freq - b.freq);
+                    let startIndex = -1;
+                    for (let i = 0; i < sortedScaleNotes.length; i++) {
+                        const noteEdoInfo = frequencyToEdoInfo(sortedScaleNotes[i].freq);
+                        if (noteEdoInfo && noteEdoInfo.stepInOctave === rootStepInOctave) {
+                            startIndex = i;
+                            break;
+                        }
+                    }
+
+                    if (startIndex === -1) {
+                        const notesByString = sortedScaleNotes.reduce((acc, note) => { (acc[note.string] = acc[note.string] || []).push(note); return acc; }, {});
+                        state.notes = Object.values(notesByString).flatMap(stringNotes => stringNotes.slice(0, limit));
+                    } else {
+                        const finalNotes = [];
+                        const notesPerStringCount = {}; 
+                        for (let i = startIndex; i < sortedScaleNotes.length; i++) {
+                            const note = sortedScaleNotes[i];
+                            notesPerStringCount[note.string] = notesPerStringCount[note.string] || 0;
+                            if (notesPerStringCount[note.string] < limit) {
+                                finalNotes.push(note);
+                                notesPerStringCount[note.string]++;
+                            }
+                        }
+                        state.notes = finalNotes;
+                    }
+                }
                 renderApp();
             }
             function handleShowScale() {
                 const rootNoteIndex = parseInt(rootNoteSelect.value);
                 const scaleType = scaleTypeSelect.value;
-                const intervals12 = ALL_SCALE_DEFINITIONS[scaleType];
-                const edoIntervals = convertIntervalsToEdo(intervals12, state.temperament);
+                const edoIntervals = state.currentScaleDefs[scaleType];
+                if (!edoIntervals) return;
 
                 const rootNoteName = NOTE_NAMES[rootNoteIndex];
-                const noteNames = intervals12.map(i => NOTE_NAMES[(rootNoteIndex + i) % 12]).join(' · ');
+                const noteNames = convertIntervalsToEdo(edoIntervals, 12).map(i => NOTE_NAMES[(rootNoteIndex + i) % 12]).join(' · ');
                 currentRootDisplay.textContent = `Root: ${rootNoteName}`;
                 currentNotesDisplay.textContent = `Scale (${scaleType} in ${state.temperament}-EDO): ${noteNames}`;
 
@@ -764,7 +778,13 @@
                 updateCircleOfFifths(rootNoteIndex, scaleType);
                 updateScaleModesDisplay(scaleType, rootNoteIndex);
             }
-            function handleRandomScale() { rootNoteSelect.selectedIndex = Math.floor(Math.random() * rootNoteSelect.options.length); scaleTypeSelect.selectedIndex = Math.floor(Math.random() * scaleTypeSelect.options.length); handleShowScale(); }
+            function handleRandomScale() { 
+                const options = Array.from(scaleTypeSelect.options);
+                if (options.length === 0) return;
+                rootNoteSelect.selectedIndex = Math.floor(Math.random() * rootNoteSelect.options.length); 
+                scaleTypeSelect.selectedIndex = Math.floor(Math.random() * options.length); 
+                handleShowScale(); 
+            }
             function handleShowAllNotes() { clearTheory(); let allNotes = []; for (let i = 0; i < state.strings.length; i++) { for (let j = -1; j < state.frets; j++) { allNotes.push({string: i, fret: j}); } } state.notes = allNotes; renderApp(); }
             function clearTheory(clearDisplays = true) {
                 state.notes = [];
@@ -779,11 +799,10 @@
                 renderApp();
             }
             function handleSetupChange(e) {
-                stopTab(); // Stop playback when changing instrument
+                TabEditor.stop();
                 const setup = e.target.value;
                 if (!setup) return;
                 
-                // Reset instrument mode before setting a new one
                 state.instrumentMode = null;
                 
                 clearTheory();
@@ -806,14 +825,15 @@
                     case 'kantele_11': setTuning(11, 0, KANTELE_11_HZ, KANTELE_11_GAUGES, 12); break;
                     case 'overtone': setupOvertoneSeries(); break;
                 }
-                initTab(); // Re-initialize the tab for the new setup
+                updateTheoryDefinitions();
+                TabEditor.init();
                 renderApp();
                 e.target.value = "";
             }
             function setTuning(numStrings, numFrets, tuningHz, gauges, temperamentSystem = 12) { 
                 state.frets = numFrets; 
                 state.strings = Array.from({ length: numStrings }, (_, i) => createStringWithTuning(tuningHz[i], gauges[i]));
-                state.temperament = (typeof temperamentSystem === 'number') ? temperamentSystem : 12; // Store the EDO number
+                state.temperament = (typeof temperamentSystem === 'number') ? temperamentSystem : 12;
                 generateInitialFretPositions(temperamentSystem); 
             }
             function setupOvertoneSeries() {
@@ -826,21 +846,15 @@
                 for (let i = 0; i < numStrings; i++) {
                     const harmonic = i + 1;
                     const freq = fundamentalHz * harmonic;
-                    // For overtone series with constant tension/gauge, we vary the length.
                     const len = calculateLength(OVERTONE_BASE_TENSION, OVERTONE_BASE_GAUGE, freq);
-                    newStrings.push({
-                        length: len,
-                        width: OVERTONE_BASE_GAUGE,
-                        tension: OVERTONE_BASE_TENSION
-                    });
+                    newStrings.push({ length: len, width: OVERTONE_BASE_GAUGE, tension: OVERTONE_BASE_TENSION });
                 }
                 state.strings = newStrings;
                 state.frets = 0;
-                // Set overtone mode
                 state.instrumentMode = 'overtone';
                 state.overtoneFundamentalHz = fundamentalHz;
                 generateInitialFretPositions();
-                initTab();
+                TabEditor.init();
             }
             function handleReverseView() { state.isPlayerView = !state.isPlayerView; renderApp(); }
             function handleLeftHandedToggle() { state.isLeftHanded = !state.isLeftHanded; renderApp(); }
@@ -864,7 +878,7 @@
                         const fretSpaceEl = document.querySelector(`.fret-space[data-string-index='${note.string}'][data-fret-index='${note.fret}']`);
                         if (fretSpaceEl) {
                             fretSpaceEl.classList.add('note-playing');
-                            setTimeout(() => fretSpaceEl.classList.remove('note-playing'), 300); // Animation duration
+                            setTimeout(() => fretSpaceEl.classList.remove('note-playing'), 300);
                         }
                     }, i * delay);
                 });
@@ -878,7 +892,7 @@
                     }
                 });
                 const strumNotes = Array.from(notesByString.values()).sort((a, b) => a.string - b.string);
-                playNoteSequenceWithAnimation(strumNotes, 50); // 50ms delay for a fast strum
+                playNoteSequenceWithAnimation(strumNotes, 50);
             }
             function handlePlayShred() {
                 if (state.notes.length === 0) return;
@@ -886,7 +900,7 @@
                     if (a.string !== b.string) return a.string - b.string;
                     return a.fret - b.fret;
                 });
-                playNoteSequenceWithAnimation(shredNotes, 80); // 80ms for a fast shred
+                playNoteSequenceWithAnimation(shredNotes, 80);
             }
 
             // --- STATE MODIFICATION ---
@@ -894,9 +908,8 @@
             function removeNote(string, fretIndex) { state.notes = state.notes.filter(n => !(n.string === string && n.fret === fretIndex)); renderApp(); }
             function addString(location) {
                 if (state.strings.length >= MAX_STRINGS) return;
-                stopTab();
+                TabEditor.stop();
                 
-                // Special handling for Overtone Series mode
                 if (location === 'high' && state.instrumentMode === 'overtone') {
                     const numStrings = state.strings.length;
                     const newHarmonic = numStrings + 1;
@@ -906,8 +919,8 @@
                     const newLength = calculateLength(baseTension, baseWidth, newFreq);
                     const newString = { length: newLength, width: baseWidth, tension: baseTension };
                     state.strings.push(newString);
-                } else { // Standard string adding logic
-                    state.instrumentMode = null; // Adding any string manually cancels overtone mode
+                } else {
+                    state.instrumentMode = null;
                     const isLow = location === 'low';
                     if (state.strings.length === 0) {
                         state.strings.push(createStringWithTuning(82.41, 0.042));
@@ -931,10 +944,10 @@
                 }
                 
                 generateInitialFretPositions();
-                initTab();
+                TabEditor.init();
                 renderApp();
             }
-            function removeString(indexToRemove) { if (state.strings.length <= MIN_STRINGS) return; stopTab(); clearTheory(); state.strings.splice(indexToRemove, 1); state.fretPositions.splice(indexToRemove, 1); state.notes = state.notes.filter(n => n.string !== indexToRemove).map(n => { if (n.string > indexToRemove) n.string--; return n; }); state.instrumentMode = null; initTab(); renderApp(); }
+            function removeString(indexToRemove) { if (state.strings.length <= MIN_STRINGS) return; TabEditor.stop(); clearTheory(); state.strings.splice(indexToRemove, 1); state.fretPositions.splice(indexToRemove, 1); state.notes = state.notes.filter(n => n.string !== indexToRemove).map(n => { if (n.string > indexToRemove) n.string--; return n; }); state.instrumentMode = null; TabEditor.init(); renderApp(); }
             function changeFrets(amount) { const newCount = state.frets + amount; if (newCount >= MIN_FRETS && newCount <= MAX_FRETS) { clearTheory(); state.frets = newCount; generateInitialFretPositions(state.temperament); renderApp(); } }
             
             // --- THEORY DISPLAY (CIRCLE/MODES/PIE) ---
@@ -942,7 +955,7 @@
                 const size = 40, radius = size / 2;
                 const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                 svg.setAttribute('width', size); svg.setAttribute('height', size); svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
-                let startAngle = -90; // Start at the top
+                let startAngle = -90;
                 function polarToCartesian(cx, cy, r, angle) { return { x: cx + r * Math.cos((angle) * Math.PI / 180), y: cy + r * Math.sin((angle) * Math.PI / 180) }; }
                 steps.forEach(step => {
                     const sliceAngle = (step / 12) * 360;
@@ -953,7 +966,7 @@
                     const d = `M ${radius},${radius} L ${start.x},${start.y} A ${radius},${radius} 0 ${largeArcFlag} 1 ${end.x},${end.y} Z`;
                     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                     path.setAttribute('d', d);
-                    let color = '#888'; // Default for steps >= 3
+                    let color = '#888';
                     if (step === 1) color = 'black';
                     if (step === 2) color = 'white';
                     path.setAttribute('fill', color);
@@ -973,7 +986,7 @@
                 });
                 if (rootNoteIndex === null || rootNoteIndex === undefined) return;
 
-                const scaleIntervals = ALL_SCALE_DEFINITIONS[scaleName] || [];
+                const scaleIntervals = state.currentScaleDefs[scaleName] || [];
                 const isHeptatonic = scaleIntervals.length === 7;
                 const diatonicChords = scaleName.includes('Minor') ? MINOR_SCALE_DIATONIC_CHORDS : MAJOR_SCALE_DIATONIC_CHORDS;
                 
@@ -1039,7 +1052,7 @@
                     return;
                 }
                 scaleModesList.innerHTML = '';
-                const parentIntervals = ALL_SCALE_DEFINITIONS[parentScaleName];
+                const parentIntervals = state.currentScaleDefs[parentScaleName];
 
                 if (!parentScaleName || !parentIntervals) {
                     scaleModesContainer.style.display = 'none';
@@ -1082,13 +1095,11 @@
                         if (foundModeName) {
                             rootNoteSelect.value = modeRootIndex;
                             scaleTypeSelect.value = foundModeName;
-                            // Check if we need to switch scale set to show this scale
                             if (!state.isZeitlerMode && ZEITLER_SCALE_DEFINITIONS[foundModeName]) {
                                 toggleScaleSetBtn.click();
                             } else if (state.isZeitlerMode && SCALE_DEFINITIONS[foundModeName]) {
                                 toggleScaleSetBtn.click();
                             }
-                            // Set value again after dropdown is repopulated
                             scaleTypeSelect.value = foundModeName;
                             handleShowScale();
                         } else {
@@ -1102,7 +1113,7 @@
                     scaleModesList.appendChild(li);
                 });
             }
-            function findScaleNameByIntervals(intervals) { for (const name in ALL_SCALE_DEFINITIONS) { if (JSON.stringify(ALL_SCALE_DEFINITIONS[name]) === JSON.stringify(intervals)) return name; } return null; }
+            function findScaleNameByIntervals(intervals) { for (const name in state.currentScaleDefs) { if (JSON.stringify(state.currentScaleDefs[name]) === JSON.stringify(intervals)) return name; } return null; }
 
             // --- MIDI & KEYBOARD ---
             function initMidi() {
@@ -1165,9 +1176,7 @@
                 }
                 if (state.selectedMidiOutId) { const output = state.midiAccess.outputs.get(state.selectedMidiOutId); if (output) output.send([0x80, midiNote, 0]); }
             }
-            // Finds the first playable location for a midi note, used by MIDI input/import.
             function findFirstAvailableNoteLocation(midiNote) {
-                // Heuristic: iterate from high string to low, find lowest possible fret.
                 for (let i = state.strings.length - 1; i >= 0; i--) {
                     const openStringMidi = frequencyToMidi(calculateFrequency(state.strings[i]));
                     const fret = midiNote - openStringMidi;
@@ -1175,24 +1184,13 @@
                         return { string: i, fret: fret };
                     }
                 }
-                return null; // Note is not playable on the current fretboard
+                return null;
             }
             function handleKeyDown(e) {
-                // Ignore key presses if an input/textarea is focused
                 if(document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
-
-                // Handle Spacebar for Tab Play/Stop
-                if (e.code === 'Space' || e.key === ' ') {
-                    e.preventDefault(); // Prevent page from scrolling
-                    if (state.tabIsPlaying) {
-                        stopTab();
-                    } else {
-                        playTab();
-                    }
-                    return; // Don't process other key mappings
+                if (TabEditor.handleKeyDown(e)) {
+                    return; 
                 }
-
-                // Handle keyboard note playing
                 const midiNote = KEYBOARD_MAP[e.key];
                 if (midiNote && !state.activeMidiNotes.has(midiNote)) {
                     handleNoteOn(midiNote, 100);
@@ -1200,451 +1198,55 @@
             }
             function handleKeyUp(e) { if(document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return; const midiNote = KEYBOARD_MAP[e.key]; if (midiNote) { handleNoteOff(midiNote); } }
 
-            // --- TABLATURE FUNCTIONS ---
-
-            /**
-             * Initializes or resets the tablature data structure based on the current instrument settings.
-             */
-            function initTab() {
-                state.tabData = [];
-                for (let i = 0; i < state.strings.length; i++) {
-                    state.tabData.push(Array(state.tabNumCols).fill('-'));
-                }
-            }
-
-            /**
-             * Renders the entire tab editor grid into the DOM.
-             */
-            function renderTabEditor() {
-                tabGrid.innerHTML = '';
-                tabGrid.style.gridTemplateColumns = `auto repeat(${state.tabNumCols}, 2.2ch)`;
-                
-                const stringIndices = Array.from({ length: state.strings.length }, (_, k) => k);
-                if (state.isPlayerView) { stringIndices.reverse(); }
-
-                stringIndices.forEach(stringIndex => {
-                    // String Name Label
-                    const stringName = document.createElement('div');
-                    stringName.className = 'tab-string-name';
-                    const freq = calculateFrequency(state.strings[stringIndex]);
-                    stringName.textContent = frequencyToNoteName(freq);
-                    tabGrid.appendChild(stringName);
-                    
-                    // Input Cells for the string
-                    for (let colIndex = 0; colIndex < state.tabNumCols; colIndex++) {
-                        const cell = document.createElement('input');
-                        cell.type = 'text';
-                        cell.className = 'tab-cell';
-                        cell.maxLength = 2;
-                        cell.dataset.stringIndex = stringIndex;
-                        cell.dataset.colIndex = colIndex;
-                        cell.value = state.tabData[stringIndex][colIndex] || '-';
-                        cell.addEventListener('input', handleTabCellChange);
-                        tabGrid.appendChild(cell);
-                    }
-                });
-            }
-
-            /**
-             * Handles user input into a tab cell, sanitizes it, and updates the state.
-             * @param {Event} e The input event from a tab cell.
-             */
-            function handleTabCellChange(e) {
-                const input = e.target;
-                const stringIndex = parseInt(input.dataset.stringIndex, 10);
-                const colIndex = parseInt(input.dataset.colIndex, 10);
-                
-                // Sanitize input: allow numbers, specified symbols, or an empty string (which becomes '-')
-                let value = input.value.trim();
-                const validChars = /^[0-9]$|^[1-9][0-9]$|^[/\\]$|^[hH]$|^[pP]$|^[~]$|^[+]$|^[xX]$|^[-]$/;
-                
-                if (!validChars.test(value)) {
-                    value = '-';
-                }
-                if (value === '') value = '-';
-
-                input.value = value;
-                state.tabData[stringIndex][colIndex] = value;
-            }
-
-            /**
-             * Starts playback of the tablature.
-             */
-            function playTab() {
-                if (state.tabIsPlaying) return;
-                AudioPlayer.init();
-                state.tabIsPlaying = true;
-                playTabBtn.textContent = '❚❚ Pause';
-                state.tabPlayheadPosition = -1;
-                tabPlayhead.style.display = 'block';
-
-                const msPerStep = 60000 / state.tabTempo / 4; // Assuming 16th note steps
-
-                state.tabIntervalId = setInterval(() => {
-                    // Move playhead to the next position
-                    state.tabPlayheadPosition++;
-                    if (state.tabPlayheadPosition >= state.tabNumCols) {
-                        stopTab();
-                        return;
-                    }
-
-                    // Update visual playhead
-                    const stringNameWidth = tabGrid.querySelector('.tab-string-name')?.offsetWidth || 0;
-                    const cellWidth = tabGrid.querySelector('.tab-cell')?.offsetWidth || 0;
-                    tabPlayhead.style.transform = `translateX(${stringNameWidth + (state.tabPlayheadPosition * cellWidth)}px)`;
-
-                    // Clear previous highlights
-                    document.querySelectorAll('.fret-space.tab-playing').forEach(el => el.classList.remove('tab-playing'));
-
-                    // Play notes at current playhead position
-                    for (let i = 0; i < state.strings.length; i++) {
-                        const cellValue = state.tabData[i][state.tabPlayheadPosition];
-                        const fretNumber = parseInt(cellValue, 10);
-                        
-                        // Check if fret is a valid number on the fretboard.
-                        if (!isNaN(fretNumber) && fretNumber >= 0 && fretNumber <= state.frets) {
-                             // A tab value of '0' is the open string (fretIndex -1).
-                             // A tab value of '1' is the first fret (fretIndex 0).
-                            const fretIndex = (fretNumber === 0) ? -1 : fretNumber -1;
-                            const freq = calculateFrettedFrequency(i, fretIndex);
-
-                            if (freq > 0) {
-                                AudioPlayer.playNote(freq, 0);
-                                // Highlight note on fretboard
-                                const fretSpaceEl = document.querySelector(`.fret-space[data-string-index='${i}'][data-fret-index='${fretIndex}']`);
-                                if (fretSpaceEl) fretSpaceEl.classList.add('tab-playing');
-                            }
-                        }
-                    }
-                }, msPerStep);
-            }
-
-            /**
-             * Stops tablature playback.
-             */
-            function stopTab() {
-                clearInterval(state.tabIntervalId);
-                state.tabIsPlaying = false;
-                playTabBtn.textContent = '▶ Play';
-                tabPlayhead.style.display = 'none';
-                document.querySelectorAll('.fret-space.tab-playing').forEach(el => el.classList.remove('tab-playing'));
-            }
-
-            /**
-             * Adds a column to the end of the tablature.
-             */
-            function addTabColumn() {
-                stopTab();
-                state.tabNumCols++;
-                state.tabData.forEach(row => row.push('-'));
-                renderTabEditor();
-            }
-
-            /**
-             * Removes the last column from the tablature.
-             */
-            function removeTabColumn() {
-                if (state.tabNumCols <= 1) return;
-                stopTab();
-                state.tabNumCols--;
-                state.tabData.forEach(row => row.pop());
-                renderTabEditor();
-            }
-
-            /**
-             * Exports the current tab data to the text area in standard tab format.
-             */
-            function exportToTextTab() {
-                let output = '';
-                const stringIndices = Array.from({ length: state.strings.length }, (_, k) => k);
-                if (state.isPlayerView) { stringIndices.reverse(); }
-
-                stringIndices.forEach(stringIndex => {
-                    const freq = calculateFrequency(state.strings[stringIndex]);
-                    const edoInfo = frequencyToEdoInfo(freq);
-                    const noteName = edoInfo.noteName; // Use EDO-aware name
-                    output += noteName.padEnd(4, ' ') + '|';
-                    for (let col = 0; col < state.tabNumCols; col++) {
-                        let val = state.tabData[stringIndex][col];
-                        output += `-${val}-`.padEnd(4, '-');
-                    }
-                    output += '|\n';
-                });
-                textTabIo.value = output;
-            }
-
-            /**
-             * Imports a text tab from the text area, parsing it into the editor.
-             */
-            function importFromTextTab() {
-                stopTab();
-                const text = textTabIo.value;
-                const lines = text.split('\n').filter(line => line.includes('|'));
-                if (lines.length === 0) {
-                    alert("No valid tab lines found. Each line should contain a '|' character.");
-                    return;
-                }
-                
-                const parsedLines = lines.map(line => line.substring(line.indexOf('|') + 1, line.lastIndexOf('|')).trim());
-                const numStrings = parsedLines.length;
-
-                // Adjust instrument if number of strings doesn't match
-                if (numStrings !== state.strings.length) {
-                    alert(`Tab has ${numStrings} strings, but instrument has ${state.strings.length}. Please adjust the instrument first.`);
-                    return;
-                }
-
-                // Deconstruct the text into a character-based grid
-                const charGrid = parsedLines.map(line => {
-                    const chars = [];
-                    for (let i = 0; i < line.length; i++) {
-                        chars.push(line[i]);
-                    }
-                    return chars;
-                });
-                
-                const numCols = Math.max(...charGrid.map(row => row.length));
-
-                // Create the new tab data by parsing the character grid
-                const newTabData = Array.from({ length: numStrings }, () => []);
-                
-                for(let col = 0; col < numCols; col++) {
-                    let hasNoteThisStep = false;
-                    for(let str = 0; str < numStrings; str++) {
-                        let char = charGrid[str][col];
-                        if (char >= '0' && char <= '9') {
-                             // Check for two-digit numbers
-                            let nextChar = charGrid[str][col+1];
-                            if (nextChar >= '0' && nextChar <= '9') {
-                                newTabData[str].push(char + nextChar);
-                                // Mark next character as consumed
-                                for(let s=0; s<numStrings; s++) { if(s!==str) charGrid[s].splice(col+1, 0, ' ');}
-                            } else {
-                                newTabData[str].push(char);
-                            }
-                            hasNoteThisStep = true;
-                        } else if ("-hpx/\\~+".includes(char?.toLowerCase())) {
-                            newTabData[str].push(char);
-                             hasNoteThisStep = true;
-                        } else {
-                            newTabData[str].push('-');
-                        }
-                    }
-                }
-
-                // Correct string order if in player view
-                let finalTabData = newTabData;
-                if(state.isPlayerView) {
-                    finalTabData.reverse();
-                }
-
-                state.tabNumCols = Math.max(...finalTabData.map(r => r.length));
-                // Pad rows to be equal length
-                state.tabData = finalTabData.map(row => {
-                    while (row.length < state.tabNumCols) {
-                        row.push('-');
-                    }
-                    return row;
-                });
-
-                renderTabEditor();
-            }
-
-            /**
-             * Exports the tab data to a downloadable MIDI file.
-             */
-            function exportToMidi() {
-                // MIDI Ticks per Quarter Note (a common resolution)
-                const TPQN = 480;
-                // Steps per quarter note (e.g., 4 = 16th notes)
-                const STEPS_PER_QUARTER = 4;
-                const TICKS_PER_STEP = TPQN / STEPS_PER_QUARTER;
-
-                const writeString = s => s.split('').map(c => c.charCodeAt(0));
-                const write_uint16 = n => [(n >> 8) & 0xFF, n & 0xFF];
-                const write_uint32 = n => [(n >> 24) & 0xFF, (n >> 16) & 0xFF, (n >> 8) & 0xFF, n & 0xFF];
-
-                const writeVariableLength = n => {
-                    let buf = [];
-                    let val = n;
-                    buf.push(val & 0x7F);
-                    val >>= 7;
-                    while (val > 0) {
-                        buf.push(0x80 | (val & 0x7F));
-                        val >>= 7;
-                    }
-                    return buf.reverse();
-                };
-
-                // --- Build MIDI Track ---
-                let trackEvents = [];
-                let lastStepHadNote = false;
-
-                for (let col = 0; col < state.tabNumCols; col++) {
-                    const notesOn = [];
-                    for (let str = 0; str < state.strings.length; str++) {
-                        const fret = parseInt(state.tabData[str][col], 10);
-                        if (!isNaN(fret) && fret >= 0) {
-                            const openStringMidi = frequencyToMidi(calculateFrequency(state.strings[str]));
-                            const midiNote = openStringMidi + fret;
-                            notesOn.push(midiNote);
-                        }
-                    }
-
-                    const deltaTime = (lastStepHadNote || notesOn.length > 0) ? TICKS_PER_STEP : 0;
-                    
-                    if (notesOn.length > 0) {
-                        // Note On events
-                        notesOn.forEach((note, i) => {
-                            trackEvents.push(...writeVariableLength(i === 0 ? deltaTime : 0), 0x90, note, 100); // command, note, velocity
-                        });
-                        // Note Off events (one step later)
-                        notesOn.forEach((note, i) => {
-                             trackEvents.push(...writeVariableLength(i === 0 ? TICKS_PER_STEP : 0), 0x80, note, 0); // command, note, velocity
-                        });
-                        lastStepHadNote = false;
-                    } else {
-                        // If no note, just advance time if the previous step had a note
-                        if (lastStepHadNote) {
-                            // This case is handled by the note-off delta time, so we just reset the flag
-                           lastStepHadNote = false;
-                        }
-                    }
-                }
-                // Add End of Track event
-                trackEvents.push(...writeVariableLength(0), 0xFF, 0x2F, 0x00);
-
-                // --- Assemble File ---
-                const header = [
-                    ...writeString('MThd'), ...write_uint32(6),
-                    ...write_uint16(0), // format
-                    ...write_uint16(1), // number of tracks
-                    ...write_uint16(TPQN) // division
-                ];
-                const track = [
-                    ...writeString('MTrk'),
-                    ...write_uint32(trackEvents.length),
-                    ...trackEvents
-                ];
-
-                const midiFile = new Uint8Array([...header, ...track]);
-                const blob = new Blob([midiFile], { type: 'audio/midi' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'tablature.mid';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }
-
-            /**
-             * Handles the file input for importing a MIDI file.
-             */
-            function importFromMidi(e) {
-                stopTab();
-                const file = e.target.files[0];
-                if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    try {
-                        const buffer = event.target.result;
-                        const dataView = new DataView(buffer);
-                        let ptr = 0;
-
-                        const readString = len => { let s = ''; for(let i=0; i<len; i++) s += String.fromCharCode(dataView.getUint8(ptr++)); return s; };
-                        const readUint16 = () => { const v = dataView.getUint16(ptr); ptr += 2; return v; };
-                        const readUint32 = () => { const v = dataView.getUint32(ptr); ptr += 4; return v; };
-                        const readVarLen = () => { let v = 0; let b; do { b = dataView.getUint8(ptr++); v = (v << 7) | (b & 0x7f); } while (b & 0x80); return v; };
-
-                        // Header
-                        if (readString(4) !== 'MThd') throw new Error("Invalid MIDI header");
-                        readUint32(); // length
-                        readUint16(); // format
-                        const numTracks = readUint16();
-                        const division = readUint16(); // Ticks per quarter note
-
-                        const notes = [];
-                        let absoluteTime = 0;
-
-                        // Tracks
-                        for (let i = 0; i < numTracks; i++) {
-                            if (readString(4) !== 'MTrk') continue; // Skip non-track chunks
-                            let trackEnd = ptr + readUint32();
-                            absoluteTime = 0;
-                            let lastStatus = 0;
-
-                            while (ptr < trackEnd) {
-                                absoluteTime += readVarLen();
-                                let status = dataView.getUint8(ptr);
-                                if (status < 0x80) { status = lastStatus; } else { ptr++; }
-                                lastStatus = status;
-                                
-                                const cmd = status >> 4;
-                                if (cmd === 9) { // Note On
-                                    const note = dataView.getUint8(ptr++);
-                                    const velocity = dataView.getUint8(ptr++);
-                                    if(velocity > 0) {
-                                       notes.push({ midi: note, time: absoluteTime });
-                                    }
-                                } else if (cmd === 8) { // Note Off
-                                    ptr += 2; // Ignore note off
-                                } else if (status === 0xFF) { // Meta Event
-                                    ptr++; // skip type
-                                    ptr += readVarLen(); // skip length
-                                } else if (status >= 0xC0 && status <= 0xDF) { // Program/Channel Pressure
-                                    ptr++;
-                                } else { // Other events
-                                    ptr += 2;
-                                }
-                            }
-                        }
-
-                        if (notes.length === 0) { alert("No notes found in MIDI file."); return; }
-
-                        // Quantize and build tab
-                        const ticksPerStep = division / 4; // 16th notes
-                        const maxTime = Math.max(...notes.map(n => n.time));
-                        state.tabNumCols = Math.ceil(maxTime / ticksPerStep) + 4;
-                        initTab();
-
-                        notes.forEach(note => {
-                            const col = Math.round(note.time / ticksPerStep);
-                            if (col < state.tabNumCols) {
-                                const location = findFirstAvailableNoteLocation(note.midi);
-                                if (location && state.tabData[location.string][col] === '-') {
-                                    state.tabData[location.string][col] = location.fret.toString();
-                                }
-                            }
-                        });
-                        
-                        renderApp();
-                    } catch(err) {
-                        console.error("Error parsing MIDI file:", err);
-                        alert("Could not parse MIDI file. It may be invalid or in an unsupported format.");
-                    }
-                };
-                reader.readAsArrayBuffer(file);
-            }
-
             // --- UI UPDATE & INITIALIZATION ---
-            function populateRootAndChordDropdowns() {
-                NOTE_NAMES.forEach((name, i) => rootNoteSelect.innerHTML += `<option value="${i}">${name}</option>`);
-                Object.keys(CHORD_DEFINITIONS).forEach(name => chordTypeSelect.innerHTML += `<option value="${name}">${name}</option>`);
+            function updateTheoryDefinitions() {
+                let chordDefs = { ...CHORD_DEFINITIONS };
+                if (state.temperament === 19) chordDefs = { ...chordDefs, ...CHORD_DEFINITIONS_19 };
+                if (state.temperament === 24) chordDefs = { ...chordDefs, ...CHORD_DEFINITIONS_24 };
+                if (state.temperament === 31) chordDefs = { ...chordDefs, ...CHORD_DEFINITIONS_31 };
+                state.currentChordDefs = chordDefs;
+
+                let baseScales = state.isZeitlerMode ? ZEITLER_SCALE_DEFINITIONS : SCALE_DEFINITIONS;
+                let scaleDefs = { ...baseScales };
+                if (state.temperament === 19) scaleDefs = { ...scaleDefs, ...SCALE_DEFINITIONS_19 };
+                if (state.temperament === 24) scaleDefs = { ...scaleDefs, ...SCALE_DEFINITIONS_24 };
+                if (state.temperament === 31) scaleDefs = { ...scaleDefs, ...SCALE_DEFINITIONS_31 };
+                state.currentScaleDefs = scaleDefs;
+
+                populateTheoryDropdowns();
             }
-            function populateScaleDropdown() {
-                const selectedValue = scaleTypeSelect.value;
+
+            function updateScaleDropdown() {
+                const searchTerm = scaleSearchInput.value.toLowerCase();
+                const selectedScale = scaleTypeSelect.value;
+                
                 scaleTypeSelect.innerHTML = '';
-                const source = state.isZeitlerMode ? ZEITLER_SCALE_DEFINITIONS : SCALE_DEFINITIONS;
-                Object.keys(source).sort().forEach(name => {
-                    scaleTypeSelect.innerHTML += `<option value="${name}">${name}</option>`;
+                Object.keys(state.currentScaleDefs).sort().forEach(name => {
+                    if (name.toLowerCase().includes(searchTerm)) {
+                        scaleTypeSelect.innerHTML += `<option value="${name}">${name}</option>`;
+                    }
                 });
-                // Try to restore previous selection
-                if (Array.from(scaleTypeSelect.options).some(opt => opt.value === selectedValue)) {
-                    scaleTypeSelect.value = selectedValue;
+
+                if (Array.from(scaleTypeSelect.options).some(opt => opt.value === selectedScale)) {
+                    scaleTypeSelect.value = selectedScale;
                 }
+            }
+
+            function populateTheoryDropdowns() {
+                const selectedChord = chordTypeSelect.value;
+                chordTypeSelect.innerHTML = '';
+                Object.keys(state.currentChordDefs).sort().forEach(name => {
+                    chordTypeSelect.innerHTML += `<option value="${name}">${name}</option>`;
+                });
+                if (Array.from(chordTypeSelect.options).some(opt => opt.value === selectedChord)) {
+                    chordTypeSelect.value = selectedChord;
+                }
+                updateScaleDropdown();
+            }
+
+            function populateRootDropdown() {
+                rootNoteSelect.innerHTML = '';
+                NOTE_NAMES.forEach((name, i) => rootNoteSelect.innerHTML += `<option value="${i}">${name}</option>`);
             }
             function updateGlobalControls() { 
                 fretCountEl.textContent = state.frets; 
@@ -1654,11 +1256,20 @@
                 addFretBtn.disabled = state.frets >= MAX_FRETS; 
                 showFretNumbersBtn.textContent = state.showFretNumbers ? 'Hide Fret #' : 'Show Fret #'; 
                 reverseStringsBtn.textContent = state.isPlayerView ? 'Spectator View' : 'Player View';
-                leftHandedBtn.textContent = state.isLeftHanded ? 'Right Handed' : 'Left Handed';
+                
+                // Update Left Handed button text based on player and spectator views
+                const baseLhText = state.isLeftHanded ? 'Right Handed' : 'Left Handed';
+                if (!state.isPlayerView) { // In Spectator View, the perspective is flipped
+                    leftHandedBtn.textContent = (baseLhText === 'Right Handed') ? 'Left Handed' : 'Right Handed';
+                } else {
+                    leftHandedBtn.textContent = baseLhText;
+                }
+
                 document.querySelectorAll('.remove-string-btn').forEach(btn => btn.disabled = (state.strings.length <= MIN_STRINGS)); 
             }
+
             addLowStringBtn.addEventListener('click', () => addString('low')); addHighStringBtn.addEventListener('click', () => addString('high')); addFretBtn.addEventListener('click', () => changeFrets(1)); removeFretBtn.addEventListener('click', () => changeFrets(-1));
-            resetFretsBtn.addEventListener('click', () => { stopTab(); clearTheory(); state.instrumentMode = null; setTuning(6, 12, GUITAR_TUNING_HZ, GUITAR_GAUGES, 12); initTab(); renderApp(); });
+            resetFretsBtn.addEventListener('click', () => { TabEditor.stop(); clearTheory(); state.instrumentMode = null; setTuning(6, 12, GUITAR_TUNING_HZ, GUITAR_GAUGES, 12); updateTheoryDefinitions(); TabEditor.init(); renderApp(); });
             toggleTuningBtn.addEventListener('click', () => { state.tuningPanelVisible = !state.tuningPanelVisible; renderApp(); });
             displayModeSelect.addEventListener('change', (e) => { state.noteDisplayMode = e.target.value; renderApp(); });
             showChordBtn.addEventListener('click', handleShowChord); clearFretboardBtn.addEventListener('click', () => clearTheory(true));
@@ -1681,40 +1292,44 @@
             masterVolumeSlider.addEventListener('input', e => { 
                 const newVolume = parseFloat(e.target.value) / 100;
                 state.masterVolume = newVolume;
-                AudioPlayer.init(); // Ensure context is started
+                AudioPlayer.init();
                 AudioPlayer.setVolume(newVolume);
             });
-            // Tab Event Listeners
-            playTabBtn.addEventListener('click', playTab);
-            stopTabBtn.addEventListener('click', stopTab);
-            addTabColBtn.addEventListener('click', addTabColumn);
-            removeTabColBtn.addEventListener('click', removeTabColumn);
-            tempoInput.addEventListener('change', e => { state.tabTempo = parseInt(e.target.value, 10); if(state.tabIsPlaying) { stopTab(); playTab();} });
-            exportTextTabBtn.addEventListener('click', exportToTextTab);
-            importTextTabBtn.addEventListener('click', importFromTextTab);
-            exportMidiBtn.addEventListener('click', exportToMidi);
-            midiFileInput.addEventListener('change', importFromMidi);
             toggleScaleSetBtn.addEventListener('click', () => {
                 state.isZeitlerMode = !state.isZeitlerMode;
                 toggleScaleSetBtn.textContent = state.isZeitlerMode ? 'Show Basic Scales' : 'Show Zeitler Scales';
                 zeitlerCredit.style.display = state.isZeitlerMode ? 'block' : 'none';
-                populateScaleDropdown();
+                updateTheoryDefinitions();
             });
+            scaleSearchInput.addEventListener('input', updateScaleDropdown);
             
             // --- INITIALIZATION ---
-            // Parse and process Zeitler scales on load
             JSON.parse(ZEITLER_SCALES_RAW).forEach(scale => {
                 ZEITLER_SCALE_DEFINITIONS[scale.name] = stepsToIntervals(scale.steps);
             });
-            // Create a combined dictionary for lookups, with basic scales overwriting Zeitler for common names
-            ALL_SCALE_DEFINITIONS = { ...ZEITLER_SCALE_DEFINITIONS, ...SCALE_DEFINITIONS };
+            ALL_SCALE_DEFINITIONS_FOR_RECOGNITION = { ...ZEITLER_SCALE_DEFINITIONS, ...SCALE_DEFINITIONS };
             
-            populateRootAndChordDropdowns();
-            populateScaleDropdown();
+            populateRootDropdown();
             createCircleOfFifths();
             initMidi();
             setTuning(6, 12, GUITAR_TUNING_HZ, GUITAR_GAUGES, 12); 
-            initTab();
+            updateTheoryDefinitions();
+
+            // Initialize the Tab Editor module
+            TabEditor.setup({
+                state: state,
+                dom: { 
+                    tabGrid, tabPlayhead, tempoInput, textTabIo, midiFileInput, playTabBtn, 
+                    stopTabBtn, addTabColBtn, removeTabColBtn, importTextTabBtn, 
+                    exportTextTabBtn, exportMidiBtn 
+                },
+                helpers: { 
+                    calculateFrettedFrequency, frequencyToNoteName, frequencyToEdoInfo,
+                    frequencyToMidi, findFirstAvailableNoteLocation
+                },
+                audio: AudioPlayer
+            });
+            
             renderApp();
         });
     </script>
