@@ -63,10 +63,10 @@
         #cof-svg #cof-lock-btn circle.locked { fill: #e0a800; }
         #cof-svg #cof-lock-btn text { pointer-events: none; }
         #scale-modes-list { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-        .mode-item { display: flex; align-items: center; gap: 10px; background: #3a3a3a; padding: 8px 12px; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; width: 280px; text-align: left; border: 1px solid #555; }
+        .mode-item { display: flex; align-items: center; gap: 10px; background: #3a3a3a; padding: 8px 12px; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; width: 320px; text-align: left; border: 1px solid #555; }
         .mode-item:hover { background-color: #555; border-color: #777; }
         .mode-text-container { flex-grow: 1; }
-        .mode-name { font-weight: bold; color: #e0a800; }
+        .mode-name { font-weight: bold; color: #e0a800; font-size: 0.9em;}
         .mode-steps { font-family: monospace; font-size: 0.9em; color: #ccc; margin-top: 4px; }
         .comments { margin-top: 20px; background: #2c2c2c; padding: 10px 15px; border-radius: 5px; font-size: 0.9em; text-align: left; }
         .comments h3 { margin-top: 0; color: #e0a800; }
@@ -190,7 +190,7 @@
             </div>
         </div>
         <div id="circle-of-fifths-container">
-             <h3>12 EDO Diatonic Circle of Fifths</h3>
+             <h3>12 EDO Circle of Fifths</h3>
              <svg id="cof-svg" width="300" height="300">
                 <g id="cof-lock-btn">
                     <circle cx="150" cy="150" r="30" fill="#666" stroke="#888" stroke-width="2"></circle>
@@ -318,17 +318,21 @@
             const KANTELE_11_HZ = [196.00, 220.00, 246.94, 261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25], KANTELE_11_GAUGES = [0.022, 0.020, 0.018, 0.016, 0.014, 0.012, 0.011, 0.010, 0.009, 0.008, 0.007];
             const JUST_INTONATION_RATIOS = [1/1, 16/15, 9/8, 6/5, 5/4, 4/3, 45/32, 3/2, 8/5, 5/3, 9/5, 15/8];
             const TRUE_TEMPERAMENT_OFFSETS_CENTS = [ [0, -2, 0, -1, 0, -2, -4, 0, -2, 0, -1, 0], [0, -2, 0, -1, 0, -2, -4, 0, -2, 0, -1, 0], [0, -2, 0, -1, 0, -2, -4, 0, -2, 0, -1, 0], [0, +12, +14, +12, +14, +12, +10, +14, +16, +14, +12, +14], [0, -2, 0, -1, 0, -2, -4, 0, -2, 0, -1, 0], [0, -2, 0, -1, 0, -2, -4, 0, -2, 0, -1, 0] ];
-            const CHORD_DEFINITIONS = { 'Major': {intervals:[0,4,7]},'Minor': {intervals:[0,3,7]},'Diminished': {intervals:[0,3,6]},'Augmented': {intervals:[0,4,8]},'Dominant 7th': {intervals:[0,4,7,10]},'Major 7th': {intervals:[0,4,7,11]},'Minor 7th': {intervals:[0,3,7,10]},'Major 6th': {intervals:[0,4,7,9]},'Minor 6th': {intervals:[0,3,7,9]}, 'Suspended 2nd': {intervals:[0,2,7]},'Suspended 4th': {intervals:[0,5,7]},'Major 9th': {intervals:[0,4,7,11,14]},'Dominant 9th': {intervals:[0,4,7,10,14]},'Minor 9th': {intervals:[0,3,7,10,14]},'11th':{intervals:[0,4,7,10,17]},'Dominant 13th':{intervals:[0,4,7,10,14,21]},'Major 13th':{intervals:[0,4,7,11,14,21]},'Minor 13th':{intervals:[0,3,7,10,14,21]} };
-            const CHORD_DEFINITIONS_19 = { 'Subminor (19)': { intervals: [0, 4, 11] }, 'Supermajor (19)': { intervals: [0, 7, 11] }, 'Diminished Seventh (19)': { intervals: [0, 5, 10, 15] } };
-            const CHORD_DEFINITIONS_24 = { 'Neutral (24)': { intervals: [0, 7, 14] } };
-            const CHORD_DEFINITIONS_31 = { 'Neutral (31)': { intervals: [0, 9, 18] }, 'Barbershop Seventh (31)': { intervals: [0, 10, 18, 25] }, 'I Supermajor Minor Seven (31)': { intervals: [0, 11, 18, 25] }, 'Septimal 11th (31)': { intervals: [0, 10, 15, 18, 25] }, 'Undecimal 11th (31)': { intervals: [0, 10, 14, 18, 25] }, 'Neutral Harmonic Seventh (31)': { intervals: [0, 9, 18, 25] }, 'Neutral Minor Seventh (31)': { intervals: [0, 9, 18, 26] }, 'Neutral Major Seventh (31)': { intervals: [0, 9, 18, 28] } };
-            const SCALE_DEFINITIONS = {'Major (Ionian)':[0,2,4,5,7,9,11], 'Dorian':[0,2,3,5,7,9,10], 'Phrygian':[0,1,3,5,7,8,10], 'Lydian':[0,2,4,6,7,9,11], 'Mixolydian':[0,2,4,5,7,9,10], 'Minor (Aeolian)':[0,2,3,5,7,8,10], 'Locrian':[0,1,3,5,6,8,10], 'Harmonic Minor':[0,2,3,5,7,8,11], 'Phrygian Dominant':[0,1,4,5,7,8,10], 'Melodic Minor':[0,2,3,5,7,9,11], 'Major Pentatonic':[0,2,4,7,9], 'Minor Pentatonic':[0,3,5,7,10], 'Blues':[0,3,5,6,7,10], 'Neapolitan Minor': [0, 1, 3, 5, 7, 8, 11], 'Byzantine': [0, 1, 4, 5, 7, 8, 11]};
-            const SCALE_DEFINITIONS_19 = { 'Supermajor Lydian (19)': [0, 3, 7, 8, 11, 14, 17], 'Subminor Pentatonic (19)': [0, 4, 6, 11, 15] };
-            const SCALE_DEFINITIONS_24 = { 'Neutral Ionian (24)': [0, 4, 7, 10, 14, 18, 21], 'Neutral Dorian (24)': [0, 3, 6, 10, 14, 17, 20], 'Neutral Phrygian (24)': [0, 3, 7, 11, 14, 17, 21], 'Neutral Lydian (24)': [0, 4, 8, 11, 14, 18, 21], 'Neutral Mixolydian (24)': [0, 4, 7, 10, 14, 17, 20], 'Neutral Aeolian (24)': [0, 3, 6, 10, 13, 16, 20], 'Neutral Locrian (24)': [0, 3, 7, 10, 13, 17, 21], 'Neutral Whole (24)': [0, 3, 7, 10, 14, 17, 21], 'Maqam Bayati (24)': [0, 3, 5, 9, 13, 15, 19], 'Maqam Rast Asc (24)': [0, 4, 7, 9, 13, 17, 20], 'Maqam Rast Desc (24)': [0, 4, 7, 9, 13, 17, 21], 'Maqam Saba (24)': [0, 3, 5, 7, 13, 15, 19], 'Maqam Sigah (24)': [0, 2, 6, 10, 13, 15, 19], 'Maqam Ajam (24)': [0, 4, 8, 10, 14, 18, 22], 'Maqam Hoseyni (24)': [0, 3, 5, 9, 12, 14, 18], 'Maqam Nahawand (24)': [0, 4, 6, 10, 14, 16, 20], 'Maqam Hijaz (24)': [0, 2, 8, 10, 14, 16, 20], 'Maqam Kurd (24)': [0, 2, 6, 10, 12, 16, 20] };
-            const SCALE_DEFINITIONS_31 = { 'Neutral (31)': [0, 4, 8, 11, 15, 19, 23], 'Gamelan Pelog (31)': [0, 3, 7, 14, 17, 21, 28], 'Gamelan pseudo-Slendro (31)': [0, 6, 12, 18, 24], 'Pure Blues (31)': [0, 10, 18, 25], 'Undecimal Blues (31)': [0, 10, 14, 18, 27], 'Mothra (Square Wave) (31)': [0, 5, 10, 14, 18, 22, 25, 28], 'Supermajor Hexatonic (31)': [0, 5, 11, 13, 18, 25] };
+            const CHORD_DEFINITIONS = { 'Major': {steps:[4,3]},'Minor': {steps:[3,4]},'Diminished': {steps:[3,3]},'Augmented': {steps:[4,4]},'Dominant 7th': {steps:[4,3,3]},'Major 7th': {steps:[4,3,4]},'Minor 7th': {steps:[3,4,3]},'Major 6th': {steps:[4,3,2]},'Minor 6th': {steps:[3,4,2]}, 'Suspended 2nd': {steps:[2,5]},'Suspended 4th': {steps:[5,2]},'Major 9th': {steps:[4,3,4,3]},'Dominant 9th': {steps:[4,3,3,4]},'Minor 9th': {steps:[3,4,3,4]},'11th':{steps:[4,3,3,7]},'Dominant 13th':{steps:[4,3,3,4,7]},'Major 13th':{steps:[4,3,4,3,7]},'Minor 13th':{steps:[3,4,3,4,7]} };
+            const CHORD_DEFINITIONS_19 = { 'Subminor (19)': { steps: [4, 7] }, 'Supermajor (19)': { steps: [7, 4] }, 'Diminished Seventh (19)': { steps: [5, 5, 5] } };
+            const CHORD_DEFINITIONS_24 = { 'Neutral (24)': { steps: [7, 7] } };
+            const CHORD_DEFINITIONS_31 = { 'Neutral (31)': { steps: [9, 9] }, 'Barbershop Seventh (31)': { steps: [10, 8, 7] }, 'I Supermajor Minor Seven (31)': { steps: [11, 7, 7] }, 'Septimal 11th (31)': { steps: [10, 5, 3, 7] }, 'Undecimal 11th (31)': { steps: [10, 4, 4, 7] }, 'Neutral Harmonic Seventh (31)': { steps: [9, 9, 7] }, 'Neutral Minor Seventh (31)': { steps: [9, 9, 8] }, 'Neutral Major Seventh (31)': { steps: [9, 9, 10] } };
+            
+            // All scale definitions now use relative steps
+            const SCALE_DEFINITIONS = {'Major (Ionian)':[2,2,1,2,2,2,1], 'Dorian':[2,1,2,2,2,1,2], 'Phrygian':[1,2,2,2,1,2,2], 'Lydian':[2,2,2,1,2,2,1], 'Mixolydian':[2,2,1,2,2,1,2], 'Minor (Aeolian)':[2,1,2,2,1,2,2], 'Locrian':[1,2,2,1,2,2,2], 'Harmonic Minor':[2,1,2,2,1,3,1], 'Locrian #6': [1,2,2,1,3,1,2], 'Phrygian Dominant':[1,3,1,2,1,2,2], 'Melodic Minor':[2,1,2,2,2,2,1], 'Major Pentatonic':[2,2,3,2,3], 'Minor Pentatonic':[3,2,2,3,2], 'Blues':[3,2,1,1,3,2], 'Neapolitan Minor': [1,2,2,2,1,3,1], 'Byzantine': [1,3,1,2,1,3,1]};
+            const SCALE_DEFINITIONS_19 = { 'Supermajor Lydian (19)': [3,4,1,3,3,3,2], 'Subminor Pentatonic (19)': [4,2,5,4,4] };
+            const SCALE_DEFINITIONS_24 = { 'Neutral Ionian (24)': [4,3,3,4,4,3,3], 'Neutral Dorian (24)': [3,3,4,4,3,3,4], 'Neutral Phrygian (24)': [3,4,4,3,3,4,3], 'Neutral Lydian (24)': [4,4,3,3,4,3,3], 'Neutral Mixolydian (24)': [4,3,3,4,3,3,4], 'Neutral Aeolian (24)': [3,3,4,3,3,4,4], 'Neutral Locrian (24)': [3,4,3,3,4,4,3], 'Neutral Whole (24)': [3,4,3,4,3,4,3], 'Maqam Bayati (24)': [3,2,4,4,2,4,4], 'Maqam Rast Asc (24)': [4,3,2,4,4,3,4], 'Maqam Rast Desc (24)': [4,3,2,4,4,4,3], 'Maqam Saba (24)': [3,2,2,6,2,4,4], 'Maqam Sigah (24)': [2,4,4,3,2,4,5], 'Maqam Ajam (24)': [4,4,2,4,4,4,2], 'Maqam Hoseyni (24)': [3,2,4,3,2,4,6], 'Maqam Nahawand (24)': [4,2,4,4,2,4,4], 'Maqam Hijaz (24)': [2,6,2,4,2,4,4], 'Maqam Kurd (24)': [2,4,4,2,4,4,4] };
+            const SCALE_DEFINITIONS_31 = { 'Neutral (31)': [4,4,3,4,4,4,4], 'Gamelan Pelog (31)': [3,4,7,3,4,7,3], 'Gamelan pseudo-Slendro (31)': [6,6,6,6,7], 'Pure Blues (31)': [10,8,7,6], 'Undecimal Blues (31)': [10,4,4,9,4], 'Mothra (Square Wave) (31)': [5,5,4,4,4,3,3,3], 'Supermajor Hexatonic (31)': [5,6,2,5,7,6] };
+
             const INTERVAL_NAMES = {0:'R',1:'b2',2:'2',3:'b3',4:'3',5:'4',6:'b5',7:'5',8:'#5',9:'6',10:'b7',11:'7',12:'R',13:'b9',14:'9',15:'#9',16:'b11',17:'11',18:'#11',19:'b13',20:'6',21:'13'};
             const ROMAN_INTERVAL_NAMES = {0:'I',1:'bII',2:'II',3:'bIII',4:'III',5:'IV',6:'bV',7:'V',8:'#V',9:'VI',10:'bVII',11:'VII'};
             const DIATONIC_DEGREES = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+            const DIATONIC_MODE_NAMES = ['Ionian', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian', 'Aeolian', 'Locrian'];
             const MAJOR_SCALE_DIATONIC_CHORDS = [ {type: 'Major', roman: 'I'}, {type: 'Minor', roman: 'ii'}, {type: 'Minor', roman: 'iii'}, {type: 'Major', roman: 'IV'}, {type: 'Major', roman: 'V'}, {type: 'Minor', roman: 'vi'}, {type: 'Diminished', roman: 'vii°'} ];
             const MINOR_SCALE_DIATONIC_CHORDS = [ {type: 'Minor', roman: 'i'}, {type: 'Diminished', roman: 'ii°'}, {type: 'Major', roman: 'bIII'}, {type: 'Minor', roman: 'iv'}, {type: 'Minor', roman: 'v'}, {type: 'Major', roman: 'bVI'}, {type: 'Major', roman: 'bVII'} ];
             const EDO_SYSTEMS = {
@@ -356,6 +360,7 @@
                 temperament: 12,
                 currentChordDefs: {},
                 currentScaleDefs: {},
+                scaleStepsToNameMap: new Map(),
                 isZeitlerMode: false,
                 instrumentMode: null, overtoneFundamentalHz: null 
             };
@@ -388,6 +393,7 @@
 
             // --- HELPER, PHYSICS & CHORD/SCALE FUNCTIONS ---
             function stepsToIntervals(steps) { const intervals = [0]; let currentSemitone = 0; for (let i = 0; i < steps.length - 1; i++) { currentSemitone += parseInt(steps[i], 10); intervals.push(currentSemitone); } return intervals; }
+            function chordStepsToAbsoluteIntervals(steps) { if (!steps) return [0]; const intervals = [0]; let currentSemitone = 0; for (const step of steps) { currentSemitone += parseInt(step, 10); intervals.push(currentSemitone); } return intervals; }
             function getVisualThickness(gauge) { const minGauge = 0.007, maxGauge = 0.110, minPx = 1.0, maxPx = 7.0; const clampedGauge = Math.max(minGauge, Math.min(gauge, maxGauge)); const gaugeRange = maxGauge - minGauge, pxRange = maxPx - minPx; return minPx + ((clampedGauge - minGauge) / gaugeRange) * pxRange; }
             function calculateFrequency(string) { if (!string || string.length <= 0 || string.width <= 0 || string.tension <= 0) return 0; const length_m = string.length * INCH_TO_METER, width_m = string.width * INCH_TO_METER, tension_N = string.tension * LBS_TO_NEWTONS; const radius_m = width_m / 2, area_m2 = Math.PI * Math.pow(radius_m, 2), linearDensity_mu = STEEL_DENSITY_KG_M3 * area_m2; return (1 / (2 * length_m)) * Math.sqrt(tension_N / linearDensity_mu); }
             function calculateLength(tension, width, frequency) { if(frequency <= 0) return 0; const width_m = width * INCH_TO_METER; const radius_m = width_m / 2; const area_m2 = Math.PI * Math.pow(radius_m, 2); const linearDensity_mu = STEEL_DENSITY_KG_M3 * area_m2; const tension_N = tension * LBS_TO_NEWTONS; const length_m = (1 / (2 * frequency)) * Math.sqrt(tension_N / linearDensity_mu); return length_m / INCH_TO_METER; }
@@ -455,9 +461,26 @@
                     const pattern = VOICING_LIBRARY[rootNoteName][chordType];
                     return pattern.map((voiceData, stringIndex) => ({ string: stringIndex, fret: voiceData.fret, finger: voiceData.finger }));
                 }
-                const chordIntervals = (state.currentChordDefs[chordType] || {intervals:[]}).intervals; const chordNoteIndexes = chordIntervals.map(i => (rootNoteIndex + i) % 12); let voicing = []; for (let i = 0; i < state.strings.length; i++) { const openStringMidi = frequencyToMidi(calculateFrequency(state.strings[i])); let bestFret = null; for (let fret = -1; fret < state.frets; fret++) { const currentNoteMidi = openStringMidi + (fret + 1); const currentNoteIndex = currentNoteMidi % 12; if (chordNoteIndexes.includes(currentNoteIndex)) { bestFret = fret; break; } } voicing.push({ string: i, fret: bestFret }); } return voicing;
+                const chordSteps = (state.currentChordDefs[chordType] || {steps:[]}).steps;
+                const chordIntervals = chordStepsToAbsoluteIntervals(chordSteps);
+                const chordNoteIndexes = chordIntervals.map(i => (rootNoteIndex + i) % 12);
+                let voicing = [];
+                for (let i = 0; i < state.strings.length; i++) {
+                    const openStringMidi = frequencyToMidi(calculateFrequency(state.strings[i]));
+                    let bestFret = null;
+                    for (let fret = -1; fret < state.frets; fret++) {
+                        const currentNoteMidi = openStringMidi + (fret + 1);
+                        const currentNoteIndex = currentNoteMidi % 12;
+                        if (chordNoteIndexes.includes(currentNoteIndex)) {
+                            bestFret = fret;
+                            break;
+                        }
+                    }
+                    voicing.push({ string: i, fret: bestFret });
+                }
+                return voicing;
             }
-            function recognizeChord(notes) { if (notes.length < 3) return null; const pitchClasses = [...new Set(notes.map(n => frequencyToMidi(calculateFrettedFrequency(n.string, n.fret)) % 12))].sort((a, b) => a - b); if (pitchClasses.length < 2) return null; for (const potentialRoot of pitchClasses) { const intervals = pitchClasses.map(pc => (pc - potentialRoot + 12) % 12).sort((a,b) => a - b); for (const chordName in CHORD_DEFINITIONS) { const defIntervals = CHORD_DEFINITIONS[chordName].intervals; if (intervals.length === defIntervals.length && intervals.every((val, index) => val === defIntervals[index])) { return { root: NOTE_NAMES[potentialRoot], type: chordName, rootIndex: potentialRoot }; } } } return null; }
+            function recognizeChord(notes) { if (notes.length < 3) return null; const pitchClasses = [...new Set(notes.map(n => frequencyToMidi(calculateFrettedFrequency(n.string, n.fret)) % 12))].sort((a, b) => a - b); if (pitchClasses.length < 2) return null; for (const potentialRoot of pitchClasses) { const intervals = pitchClasses.map(pc => (pc - potentialRoot + 12) % 12).sort((a,b) => a - b); for (const chordName in CHORD_DEFINITIONS) { const defSteps = CHORD_DEFINITIONS[chordName].steps; const defIntervals = chordStepsToAbsoluteIntervals(defSteps); if (intervals.length === defIntervals.length && intervals.every((val, index) => val === defIntervals[index])) { return { root: NOTE_NAMES[potentialRoot], type: chordName, rootIndex: potentialRoot }; } } } return null; }
             function recognizeScale(notes) { const pitchClasses = [...new Set(notes.map(n => frequencyToMidi(calculateFrettedFrequency(n.string, n.fret)) % 12))].sort((a, b) => a - b); if (pitchClasses.length < 5) return null; for (const potentialRoot of pitchClasses) { const intervals = pitchClasses.map(pc => (pc - potentialRoot + 12) % 12).sort((a,b) => a - b); for (const scaleName in ALL_SCALE_DEFINITIONS_FOR_RECOGNITION) { const defIntervals = ALL_SCALE_DEFINITIONS_FOR_RECOGNITION[scaleName]; if (intervals.length === defIntervals.length && intervals.every((val, index) => val === defIntervals[index])) { return { root: NOTE_NAMES[potentialRoot], type: scaleName, rootIndex: potentialRoot }; } } } return null; }
 
             // --- RENDER & UI FUNCTIONS ---
@@ -500,7 +523,7 @@
                 }
                 
                 cofSvg.parentElement.style.display = state.temperament === 12 ? 'flex' : 'none';
-                scaleModesContainer.style.display = (state.temperament === 12 && state.currentScale) ? 'flex' : 'none';
+                scaleModesContainer.style.display = state.currentScale ? 'flex' : 'none';
 
                 stringControlsContainer.innerHTML = ''; fretboardContainer.innerHTML = ''; fretNumbersContainer.innerHTML = '';
                 
@@ -688,11 +711,14 @@
                 const chordDef = state.currentChordDefs[chordType];
                 if (!chordDef) return;
 
+                const baseIntervals = chordStepsToAbsoluteIntervals(chordDef.steps);
+                
                 let voicing;
                 if (state.temperament === 12) {
                     voicing = findChordVoicing(rootNoteIndex, chordType);
                 } else {
-                    voicing = findEdoVoicing(rootNoteIndex, chordDef.intervals);
+                    const edoIntervals = convertIntervalsToEdo(baseIntervals, state.temperament);
+                    voicing = findEdoVoicing(rootNoteIndex, edoIntervals);
                 }
                 
                 clearTheory(false);
@@ -700,7 +726,7 @@
                 state.notes = voicing;
                 
                 const rootNoteName = NOTE_NAMES[rootNoteIndex];
-                const noteNames = convertIntervalsToEdo(chordDef.intervals, 12).map(i => NOTE_NAMES[(rootNoteIndex + i) % 12]).join(' · ');
+                const noteNames = baseIntervals.map(i => NOTE_NAMES[(rootNoteIndex + i) % 12]).join(' · ');
                 currentRootDisplay.textContent = `Root: ${rootNoteName}`;
                 currentNotesDisplay.textContent = `${chordType} (${state.temperament}-EDO): ${noteNames}`;
 
@@ -770,7 +796,17 @@
                 if (!edoIntervals) return;
 
                 const rootNoteName = NOTE_NAMES[rootNoteIndex];
-                const noteNames = convertIntervalsToEdo(edoIntervals, 12).map(i => NOTE_NAMES[(rootNoteIndex + i) % 12]).join(' · ');
+                let noteNames;
+                if (state.temperament === 12) {
+                    noteNames = edoIntervals.map(i => NOTE_NAMES[(rootNoteIndex + i) % 12]).join(' · ');
+                } else {
+                    const rootFreq = midiToFrequency(48 + rootNoteIndex);
+                    const rootEdoInfo = frequencyToEdoInfo(rootFreq);
+                    const rootStepInOctave = rootEdoInfo.stepInOctave;
+                    const edoData = EDO_SYSTEMS[state.temperament] || { names: [] };
+                    noteNames = edoIntervals.map(i => edoData.names[(rootStepInOctave + i) % state.temperament] || '?').join(' · ');
+                }
+
                 currentRootDisplay.textContent = `Root: ${rootNoteName}`;
                 currentNotesDisplay.textContent = `Scale (${scaleType} in ${state.temperament}-EDO): ${noteNames}`;
 
@@ -957,8 +993,10 @@
                 svg.setAttribute('width', size); svg.setAttribute('height', size); svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
                 let startAngle = -90;
                 function polarToCartesian(cx, cy, r, angle) { return { x: cx + r * Math.cos((angle) * Math.PI / 180), y: cy + r * Math.sin((angle) * Math.PI / 180) }; }
+                const totalSteps = steps.reduce((a, b) => a + b, 0);
+                if (totalSteps === 0) return svg;
                 steps.forEach(step => {
-                    const sliceAngle = (step / 12) * 360;
+                    const sliceAngle = (step / totalSteps) * 360;
                     const endAngle = startAngle + sliceAngle;
                     const start = polarToCartesian(radius, radius, radius, startAngle);
                     const end = polarToCartesian(radius, radius, radius, endAngle);
@@ -966,11 +1004,13 @@
                     const d = `M ${radius},${radius} L ${start.x},${start.y} A ${radius},${radius} 0 ${largeArcFlag} 1 ${end.x},${end.y} Z`;
                     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                     path.setAttribute('d', d);
-                    let color = '#888';
-                    if (step === 1) color = 'black';
-                    if (step === 2) color = 'white';
+                    let color = '#888'; // Default for other steps
+                    if (step === 1) color = '#555';
+                    if (step === 2) color = '#ddd';
+                    if (step === 3) color = '#a0522d'; // Sienna brown
+                    if (step === 4) color = '#8B4513'; // Saddle brown
                     path.setAttribute('fill', color);
-                    path.setAttribute('stroke', '#555');
+                    path.setAttribute('stroke', '#333');
                     path.setAttribute('stroke-width', '0.5');
                     svg.appendChild(path);
                     startAngle = endAngle;
@@ -1011,7 +1051,8 @@
                 if (state.interactionMode === 'play') {
                     AudioPlayer.init();
                     const rootMidi = 60 + pitchClass;
-                    const chordIntervals = CHORD_DEFINITIONS[chordType].intervals;
+                    const chordSteps = CHORD_DEFINITIONS[chordType].steps;
+                    const chordIntervals = chordStepsToAbsoluteIntervals(chordSteps);
                     const frequencies = chordIntervals.map(interval => midiToFrequency(rootMidi + interval));
                     AudioPlayer.playSequence(frequencies);
                     return;
@@ -1027,7 +1068,9 @@
                     state.currentChord = { root: pitchClass, type: chordType, notes: voicing };
                     const lockedRootName = NOTE_NAMES[parseInt(rootNoteSelect.value)];
                     const clickedRootName = NOTE_NAMES[pitchClass];
-                    const chordNoteNames = CHORD_DEFINITIONS[chordType].intervals.map(i => NOTE_NAMES[(pitchClass + i) % 12]).join(' · ');
+                    const chordSteps = CHORD_DEFINITIONS[chordType].steps;
+                    const chordIntervals = chordStepsToAbsoluteIntervals(chordSteps);
+                    const chordNoteNames = chordIntervals.map(i => NOTE_NAMES[(pitchClass + i) % 12]).join(' · ');
                     currentRootDisplay.textContent = `Key: ${lockedRootName} | Chord: ${clickedRootName} ${chordType}`;
                     currentNotesDisplay.textContent = `Notes: ${chordNoteNames}`;
                     renderApp();
@@ -1047,73 +1090,68 @@
                 } 
             }
             function updateScaleModesDisplay(parentScaleName, parentRootIndex) {
-                if(state.temperament !== 12) {
-                    scaleModesContainer.style.display = 'none';
-                    return;
-                }
                 scaleModesList.innerHTML = '';
                 const parentIntervals = state.currentScaleDefs[parentScaleName];
 
-                if (!parentScaleName || !parentIntervals) {
+                if (!parentScaleName || !parentIntervals || !state.scaleStepsToNameMap) {
                     scaleModesContainer.style.display = 'none';
                     return;
                 }
                 scaleModesContainer.style.display = 'flex';
-                
-                const isHeptatonic = parentIntervals.length === 7;
+
+                const rootFreq = midiToFrequency(48 + parentRootIndex);
+                const rootEdoInfo = frequencyToEdoInfo(rootFreq);
+                const rootStepInOctave = rootEdoInfo.stepInOctave;
 
                 parentIntervals.forEach((interval, i) => {
-                    const modeRootIndex = (parentRootIndex + interval) % 12;
-                    const modeIntervals = parentIntervals.map(p_int => (p_int - interval + 12) % 12).sort((a, b) => a - b);
-                    const foundModeName = findScaleNameByIntervals(modeIntervals);
-                    const modeNumberDisplay = isHeptatonic ? DIATONIC_DEGREES[i] : (i + 1);
-                    const modeDisplayName = foundModeName ? foundModeName : `${parentScaleName} Mode ${modeNumberDisplay}`;
+                    const modeRootStep = (rootStepInOctave + interval) % state.temperament;
+                    const modeRootName = (state.temperament === 12) 
+                        ? NOTE_NAMES[(parentRootIndex + interval) % 12] 
+                        : (EDO_SYSTEMS[state.temperament]?.names[modeRootStep] || `S:${modeRootStep}`);
+
+                    const modeIntervals = parentIntervals.map(p_int => (p_int - interval + state.temperament) % state.temperament).sort((a, b) => a - b);
+                    const modeSteps = modeIntervals.map((n, j) => {
+                        const next = modeIntervals[j + 1] || (modeIntervals[0] + state.temperament);
+                        return next - n;
+                    });
+
+                    const modeStepsKey = JSON.stringify(modeSteps);
+                    const foundModeName = state.scaleStepsToNameMap.get(modeStepsKey);
                     
-                    const stepsString = modeIntervals.map((n, j) => { const next = modeIntervals[j + 1] || (modeIntervals[0] + 12); return next - n; }).join('-');
-                    const stepsArray = stepsString.split('-').map(Number);
+                    const modeNumberDisplay = i + 1;
+                    const modeDisplayName = foundModeName || `${parentScaleName} Mode ${modeNumberDisplay}`;
                     
                     const li = document.createElement('li');
                     li.className = 'mode-item';
                     
                     const textContainer = document.createElement('div');
                     textContainer.className = 'mode-text-container';
-                    textContainer.innerHTML = `<div class="mode-name">${modeNumberDisplay} - ${NOTE_NAMES[modeRootIndex]} ${modeDisplayName}</div><div class="mode-steps">${stepsString}</div>`;
+                    textContainer.innerHTML = `<div class="mode-name">${DIATONIC_DEGREES[i] || i+1} - ${modeRootName} ${modeDisplayName}</div><div class="mode-steps">${modeSteps.join('-')}</div>`;
                     
-                    const pieChartSvg = createModePieChart(stepsArray);
+                    const pieChartSvg = createModePieChart(modeSteps);
                     li.appendChild(pieChartSvg);
                     li.appendChild(textContainer);
                     
                     li.addEventListener('click', () => {
                         if (state.interactionMode === 'play') {
                             AudioPlayer.init();
-                            const rootMidi = 60 + modeRootIndex;
-                            const frequencies = modeIntervals.map(iv => midiToFrequency(rootMidi + iv));
+                            const modeRootFreq = rootFreq * Math.pow(2, interval / state.temperament);
+                            const frequencies = modeIntervals.map(iv => modeRootFreq * Math.pow(2, iv / state.temperament));
                             AudioPlayer.playSequence(frequencies);
                             return;
                         }
 
                         if (foundModeName) {
-                            rootNoteSelect.value = modeRootIndex;
-                            scaleTypeSelect.value = foundModeName;
-                            if (!state.isZeitlerMode && ZEITLER_SCALE_DEFINITIONS[foundModeName]) {
-                                toggleScaleSetBtn.click();
-                            } else if (state.isZeitlerMode && SCALE_DEFINITIONS[foundModeName]) {
-                                toggleScaleSetBtn.click();
-                            }
+                            const modeRootFreq = rootFreq * Math.pow(2, interval / state.temperament);
+                            const newRootMidi = frequencyToMidi(modeRootFreq);
+                            rootNoteSelect.value = newRootMidi % 12;
                             scaleTypeSelect.value = foundModeName;
                             handleShowScale();
-                        } else {
-                            const rootNoteName = NOTE_NAMES[modeRootIndex];
-                            const noteNames = modeIntervals.map(iv => NOTE_NAMES[(modeRootIndex + iv) % 12]).join(' · ');
-                            currentRootDisplay.textContent = `Root: ${rootNoteName}`;
-                            currentNotesDisplay.textContent = `Scale (${modeDisplayName}): ${noteNames}`;
-                            showScaleOnFretboard(modeRootIndex, modeIntervals, modeDisplayName);
                         }
                     });
                     scaleModesList.appendChild(li);
                 });
             }
-            function findScaleNameByIntervals(intervals) { for (const name in state.currentScaleDefs) { if (JSON.stringify(state.currentScaleDefs[name]) === JSON.stringify(intervals)) return name; } return null; }
 
             // --- MIDI & KEYBOARD ---
             function initMidi() {
@@ -1200,19 +1238,58 @@
 
             // --- UI UPDATE & INITIALIZATION ---
             function updateTheoryDefinitions() {
+                // Chord definitions are simpler and can stay as they are, just combining based on EDO.
                 let chordDefs = { ...CHORD_DEFINITIONS };
                 if (state.temperament === 19) chordDefs = { ...chordDefs, ...CHORD_DEFINITIONS_19 };
                 if (state.temperament === 24) chordDefs = { ...chordDefs, ...CHORD_DEFINITIONS_24 };
                 if (state.temperament === 31) chordDefs = { ...chordDefs, ...CHORD_DEFINITIONS_31 };
                 state.currentChordDefs = chordDefs;
 
-                let baseScales = state.isZeitlerMode ? ZEITLER_SCALE_DEFINITIONS : SCALE_DEFINITIONS;
-                let scaleDefs = { ...baseScales };
-                if (state.temperament === 19) scaleDefs = { ...scaleDefs, ...SCALE_DEFINITIONS_19 };
-                if (state.temperament === 24) scaleDefs = { ...scaleDefs, ...SCALE_DEFINITIONS_24 };
-                if (state.temperament === 31) scaleDefs = { ...scaleDefs, ...SCALE_DEFINITIONS_31 };
-                state.currentScaleDefs = scaleDefs;
+                // Build scale definitions and the step-to-name reverse map
+                const finalScaleDefs = {};
+                const stepsToNameMap = new Map();
+                const source12EDOScales = state.isZeitlerMode ? ZEITLER_SCALE_DEFINITIONS : SCALE_DEFINITIONS;
 
+                const processScaleSet = (scaleSet) => {
+                    for (const scaleName in scaleSet) {
+                        const steps = scaleSet[scaleName];
+                        finalScaleDefs[scaleName] = stepsToIntervals(steps);
+                        const stepsKey = JSON.stringify(steps);
+                        if (!stepsToNameMap.has(stepsKey)) {
+                            stepsToNameMap.set(stepsKey, scaleName);
+                        }
+                    }
+                };
+
+                if (state.temperament === 12) {
+                    processScaleSet(source12EDOScales);
+                } else {
+                    // Map the standard 12-EDO scales to the current EDO
+                    for (const scaleName in source12EDOScales) {
+                        const steps = source12EDOScales[scaleName];
+                        let convertedSteps = steps.map(s => Math.round(s * (state.temperament / 12.0)));
+                        const sumOfSteps = convertedSteps.reduce((a, b) => a + b, 0);
+
+                        // Correct for rounding errors to ensure the scale sums to the EDO
+                        if (sumOfSteps !== state.temperament) {
+                            const diff = state.temperament - sumOfSteps;
+                            convertedSteps[convertedSteps.length - 1] += diff;
+                        }
+                        
+                        const newName = `${scaleName} (→${state.temperament}EDO)`;
+                        finalScaleDefs[newName] = stepsToIntervals(convertedSteps);
+                        stepsToNameMap.set(JSON.stringify(convertedSteps), newName);
+                    }
+                }
+
+                // Add the hardcoded, native scales for the current EDO, overwriting any mappings
+                const edoSpecificScales = { 19: SCALE_DEFINITIONS_19, 24: SCALE_DEFINITIONS_24, 31: SCALE_DEFINITIONS_31 };
+                if (edoSpecificScales[state.temperament]) {
+                    processScaleSet(edoSpecificScales[state.temperament]);
+                }
+
+                state.currentScaleDefs = finalScaleDefs;
+                state.scaleStepsToNameMap = stepsToNameMap;
                 populateTheoryDropdowns();
             }
 
@@ -1305,9 +1382,14 @@
             
             // --- INITIALIZATION ---
             JSON.parse(ZEITLER_SCALES_RAW).forEach(scale => {
-                ZEITLER_SCALE_DEFINITIONS[scale.name] = stepsToIntervals(scale.steps);
+                ZEITLER_SCALE_DEFINITIONS[scale.name] = scale.steps;
             });
-            ALL_SCALE_DEFINITIONS_FOR_RECOGNITION = { ...ZEITLER_SCALE_DEFINITIONS, ...SCALE_DEFINITIONS };
+            
+            // This is only for the 12-EDO recognizer, so it's built from 12-EDO sources only.
+            const all12EDOScaleSteps = { ...SCALE_DEFINITIONS, ...ZEITLER_SCALE_DEFINITIONS };
+            for(const scaleName in all12EDOScaleSteps) {
+                ALL_SCALE_DEFINITIONS_FOR_RECOGNITION[scaleName] = stepsToIntervals(all12EDOScaleSteps[scaleName]);
+            }
             
             populateRootDropdown();
             createCircleOfFifths();
