@@ -21,6 +21,7 @@
         button:disabled { background-color: #666; cursor: not-allowed; }
         .theory-display-container { display: flex; flex-direction: column; align-items: center; gap: 5px; margin-top: 15px; min-height: 48px; font-size: 1.1em; }
         .active-theory-display { font-weight: bold; color: #ffc107; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+        #current-intervals-display { font-weight: normal; color: #ccc; font-size: 0.9em; font-style: italic; }
         .recognition-display { font-weight: bold; color: #ccc; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; font-size: 0.9em; font-style: italic; }
         .recognition-display span.clickable { cursor: pointer; background-color: #555; padding: 3px 8px; border-radius: 4px; transition: background-color 0.2s; }
         .recognition-display span.clickable:hover { background-color: #666; color: #ffc107; }
@@ -51,17 +52,17 @@
         .note { position: absolute; top: 50%; width: 28px; height: 22px; line-height: 22px; background: radial-gradient(circle at 30% 30%, #4a90e2, #245a9e); border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 10; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.7); padding: 0 2px; }
         #zoom-slider-container { display: flex; align-items: center; gap: 10px; margin-top: 10px; justify-content: center; }
         #zoom-slider, #master-volume-slider { width: 200px; }
-        #circle-of-fifths-container, #scale-modes-container { margin-top: 25px; display: flex; flex-direction: column; align-items: center; }
-        #cof-svg { cursor: default; }
-        #cof-svg .cof-note-group { cursor: pointer; }
-        #cof-svg .cof-note-circle { fill: #555; stroke: #888; stroke-width: 2; transition: fill 0.3s; }
-        #cof-svg .cof-note-circle.highlight { fill: #e0a800; }
-        #cof-svg .cof-note-text { font-size: 16px; font-weight: bold; fill: #fff; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
-        #cof-svg .cof-roman-text { font-size: 12px; fill: #333; font-weight: bold; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
-        #cof-svg #cof-lock-btn { cursor: pointer; }
-        #cof-svg #cof-lock-btn circle { transition: fill 0.2s; }
-        #cof-svg #cof-lock-btn circle.locked { fill: #e0a800; }
-        #cof-svg #cof-lock-btn text { pointer-events: none; }
+        #circle-of-fifths-container, #circle-of-fifths-19-container, #circle-of-fifths-31-container, #scale-modes-container { margin-top: 25px; display: flex; flex-direction: column; align-items: center; }
+        #cof-svg, #cof-19-svg, #cof-31-svg { cursor: default; }
+        #cof-svg .cof-note-group, #cof-19-svg .cof-note-group, #cof-31-svg .cof-note-group { cursor: pointer; }
+        #cof-svg .cof-note-circle, #cof-19-svg .cof-note-circle, #cof-31-svg .cof-note-circle { fill: #555; stroke: #888; stroke-width: 2; transition: fill 0.3s; }
+        #cof-svg .cof-note-circle.highlight, #cof-19-svg .cof-note-circle.highlight, #cof-31-svg .cof-note-circle.highlight { fill: #e0a800; }
+        #cof-svg .cof-note-text, #cof-19-svg .cof-note-text, #cof-31-svg .cof-note-text { font-size: 16px; font-weight: bold; fill: #fff; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+        #cof-svg .cof-roman-text, #cof-19-svg .cof-roman-text, #cof-31-svg .cof-roman-text { font-size: 12px; fill: #333; font-weight: bold; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+        #cof-svg #cof-lock-btn, #cof-19-svg #cof-19-lock-btn, #cof-31-svg #cof-31-lock-btn { cursor: pointer; }
+        #cof-svg #cof-lock-btn circle, #cof-19-svg #cof-19-lock-btn circle, #cof-31-svg #cof-31-lock-btn circle { transition: fill 0.2s; }
+        #cof-svg #cof-lock-btn circle.locked, #cof-19-svg #cof-19-lock-btn circle.locked, #cof-31-svg #cof-31-lock-btn circle.locked { fill: #e0a800; }
+        #cof-svg #cof-lock-btn text, #cof-19-svg #cof-19-lock-btn text, #cof-31-svg #cof-31-lock-btn text { pointer-events: none; }
         #scale-modes-list { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
         .mode-item { display: flex; align-items: center; gap: 10px; background: #3a3a3a; padding: 8px 12px; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; width: 320px; text-align: left; border: 1px solid #555; }
         .mode-item:hover { background-color: #555; border-color: #777; }
@@ -189,6 +190,9 @@
                         <span id="current-root-display"></span>
                         <span id="current-notes-display"></span>
                     </div>
+                    <div class="active-theory-display" id="current-intervals-container" style="display: none;">
+                        <span id="current-intervals-display"></span>
+                    </div>
                     <div class="recognition-display">
                         <span id="recognized-chord-display"></span>
                         <span id="recognized-scale-display"></span>
@@ -202,6 +206,24 @@
                 <g id="cof-lock-btn">
                     <circle cx="150" cy="150" r="30" fill="#666" stroke="#888" stroke-width="2"></circle>
                     <text id="cof-lock-icon" x="150" y="150" font-size="24" text-anchor="middle" dominant-baseline="central" fill="#fff">🔓</text>
+                </g>
+             </svg>
+        </div>
+        <div id="circle-of-fifths-19-container" style="display: none;">
+             <h3>19 EDO Circle of Fifths</h3>
+             <svg id="cof-19-svg" width="400" height="400">
+                <g id="cof-19-lock-btn">
+                    <circle cx="200" cy="200" r="30" fill="#666" stroke="#888" stroke-width="2"></circle>
+                    <text id="cof-19-lock-icon" x="200" y="200" font-size="24" text-anchor="middle" dominant-baseline="central" fill="#fff">🔓</text>
+                </g>
+             </svg>
+        </div>
+        <div id="circle-of-fifths-31-container" style="display: none;">
+             <h3>31 EDO Circle of Fifths</h3>
+             <svg id="cof-31-svg" width="500" height="500">
+                <g id="cof-31-lock-btn">
+                    <circle cx="250" cy="250" r="30" fill="#666" stroke="#888" stroke-width="2"></circle>
+                    <text id="cof-31-lock-icon" x="250" y="250" font-size="24" text-anchor="middle" dominant-baseline="central" fill="#fff">🔓</text>
                 </g>
              </svg>
         </div>
@@ -259,6 +281,24 @@
         <div class="comments" id="zeitler-credit" style="display: none;">
             <h4>Scale Library Credit</h4>
             <p>When the "Show Zeitler Scales" option is active, the scale list is populated from a library of over 2000 scales, with names and structures by William Zeitler, as listed at <a href="http://allthescales.org" target="_blank" rel="noopener noreferrer">allthescales.org</a>.</p>
+        </div>
+        <div class="comments" id="comments-19-edo" style="display: none;">
+            <h3>Circle of Fifths for 19-EDO</h3>
+            <p><strong>EDO Size (N):</strong> <code>19</code></p>
+            <p><strong>Generator (The Perfect Fifth):</strong> <code>11 steps</code></p>
+            <p><strong>Structure:</strong> Complete. The numbers <code>19</code> and <code>11</code> are coprime, so the circle visits every one of the 19 notes before closing.</p>
+        </div>
+        <div class="comments" id="comments-24-edo" style="display: none;">
+            <h3>Circle of Fifths for 24-EDO</h3>
+            <p><strong>EDO Size (N):</strong> <code>24</code></p>
+            <p><strong>Generator (The Perfect Fifth):</strong> <code>14 steps</code></p>
+            <p><strong>Structure:</strong> Fragmented. The numbers <code>24</code> and <code>14</code> share a common factor of 2. The circle will close early after visiting only 12 notes, failing to visit all 24 notes in the tuning.</p>
+        </div>
+        <div class="comments" id="comments-31-edo" style="display: none;">
+            <h3>Circle of Fifths for 31-EDO</h3>
+            <p><strong>EDO Size (N):</strong> <code>31</code></p>
+            <p><strong>Generator (The Perfect Fifth):</strong> <code>18 steps</code></p>
+            <p><strong>Structure:</strong> Complete. The numbers <code>31</code> and <code>18</code> are coprime, so the circle visits every one of the 31 notes before closing.</p>
         </div>
     </div>
     
@@ -430,9 +470,9 @@
             const JUST_INTONATION_RATIOS = [1/1, 16/15, 9/8, 6/5, 5/4, 4/3, 45/32, 3/2, 8/5, 5/3, 9/5, 15/8];
             const TRUE_TEMPERAMENT_OFFSETS_CENTS = [ [0, -2, 0, -1, 0, -2, -4, 0, -2, 0, -1, 0], [0, -2, 0, -1, 0, -2, -4, 0, -2, 0, -1, 0], [0, -2, 0, -1, 0, -2, -4, 0, -2, 0, -1, 0], [0, +12, +14, +12, +14, +12, +10, +14, +16, +14, +12, +14], [0, -2, 0, -1, 0, -2, -4, 0, -2, 0, -1, 0], [0, -2, 0, -1, 0, -2, -4, 0, -2, 0, -1, 0] ];
             const CHORD_DEFINITIONS = { 'Major': {steps:[4,3]},'Minor': {steps:[3,4]},'Diminished': {steps:[3,3]},'Augmented': {steps:[4,4]},'Dominant 7th': {steps:[4,3,3]},'Major 7th': {steps:[4,3,4]},'Minor 7th': {steps:[3,4,3]},'Major 6th': {steps:[4,3,2]},'Minor 6th': {steps:[3,4,2]}, 'Suspended 2nd': {steps:[2,5]},'Suspended 4th': {steps:[5,2]},'Major 9th': {steps:[4,3,4,3]},'Dominant 9th': {steps:[4,3,3,4]},'Minor 9th': {steps:[3,4,3,4]},'11th':{steps:[4,3,3,7]},'Dominant 13th':{steps:[4,3,3,4,7]},'Major 13th':{steps:[4,3,4,3,7]},'Minor 13th':{steps:[3,4,3,4,7]} };
-            const CHORD_DEFINITIONS_19 = { 'Subminor (19)': { steps: [4, 7] }, 'Supermajor (19)': { steps: [7, 4] }, 'Diminished Seventh (19)': { steps: [5, 5, 5] } };
+            const CHORD_DEFINITIONS_19 = { 'Major (19)': { steps: [6, 5] }, 'Minor (19)': { steps: [5, 6] }, 'Diminished (19)': { steps: [5, 5] }, 'Subminor (19)': { steps: [4, 7] }, 'Supermajor (19)': { steps: [7, 4] }, 'Diminished Seventh (19)': { steps: [5, 5, 5] } };
             const CHORD_DEFINITIONS_24 = { 'Neutral (24)': { steps: [7, 7] } };
-            const CHORD_DEFINITIONS_31 = { 'Neutral (31)': { steps: [9, 9] }, 'Barbershop Seventh (31)': { steps: [10, 8, 7] }, 'I Supermajor Minor Seven (31)': { steps: [11, 7, 7] }, 'Septimal 11th (31)': { steps: [10, 5, 3, 7] }, 'Undecimal 11th (31)': { steps: [10, 4, 4, 7] }, 'Neutral Harmonic Seventh (31)': { steps: [9, 9, 7] }, 'Neutral Minor Seventh (31)': { steps: [9, 9, 8] }, 'Neutral Major Seventh (31)': { steps: [9, 9, 10] } };
+            const CHORD_DEFINITIONS_31 = { 'Major (31)': { steps: [10, 8] }, 'minor (31)': { steps: [8, 10] }, 'Diminished (31)': { steps: [8, 8] }, 'Neutral (31)': { steps: [9, 9] }, 'Barbershop Seventh (31)': { steps: [10, 8, 7] }, 'I Supermajor Minor Seven (31)': { steps: [11, 7, 7] }, 'Septimal 11th (31)': { steps: [10, 5, 3, 7] }, 'Undecimal 11th (31)': { steps: [10, 4, 4, 7] }, 'Neutral Harmonic Seventh (31)': { steps: [9, 9, 7] }, 'Neutral Minor Seventh (31)': { steps: [9, 9, 8] }, 'Neutral Major Seventh (31)': { steps: [9, 9, 10] } };
             
             // All scale definitions now use relative steps
             const SCALE_DEFINITIONS = {'Major (Ionian)':[2,2,1,2,2,2,1], 'Dorian':[2,1,2,2,2,1,2], 'Phrygian':[1,2,2,2,1,2,2], 'Lydian':[2,2,2,1,2,2,1], 'Mixolydian':[2,2,1,2,2,1,2], 'Minor (Aeolian)':[2,1,2,2,1,2,2], 'Locrian':[1,2,2,1,2,2,2], 'Harmonic Minor':[2,1,2,2,1,3,1], 'Locrian #6': [1,2,2,1,3,1,2], 'Phrygian Dominant':[1,3,1,2,1,2,2], 'Melodic Minor':[2,1,2,2,2,2,1], 'Major Pentatonic':[2,2,3,2,3], 'Minor Pentatonic':[3,2,2,3,2], 'Blues':[3,2,1,1,3,2], 'Neapolitan Minor': [1,2,2,2,1,3,1], 'Byzantine': [1,3,1,2,1,3,1]};
@@ -446,6 +486,10 @@
             const DIATONIC_MODE_NAMES = ['Ionian', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian', 'Aeolian', 'Locrian'];
             const MAJOR_SCALE_DIATONIC_CHORDS = [ {type: 'Major', roman: 'I'}, {type: 'Minor', roman: 'ii'}, {type: 'Minor', roman: 'iii'}, {type: 'Major', roman: 'IV'}, {type: 'Major', roman: 'V'}, {type: 'Minor', roman: 'vi'}, {type: 'Diminished', roman: 'vii°'} ];
             const MINOR_SCALE_DIATONIC_CHORDS = [ {type: 'Minor', roman: 'i'}, {type: 'Diminished', roman: 'ii°'}, {type: 'Major', roman: 'bIII'}, {type: 'Minor', roman: 'iv'}, {type: 'Minor', roman: 'v'}, {type: 'Major', roman: 'bVI'}, {type: 'Major', roman: 'bVII'} ];
+            const COF_19_ORDER = [0, 11, 3, 14, 6, 17, 9, 1, 12, 4, 15, 7, 18, 10, 2, 13, 5, 16, 8]; // Note steps in 19-EDO circle of fifths order
+            const DIATONIC_CHORDS_19 = [ {type: 'Minor (19)', roman: 'i'}, {type: 'Diminished (19)', roman: 'ii°'}, {type: 'Major (19)', roman: '♭III'}, {type: 'Minor (19)', roman: 'iv'}, {type: 'Minor (19)', roman: 'v'}, {type: 'Major (19)', roman: '♭VI'}, {type: 'Major (19)', roman: '♭VII'} ];
+            const COF_31_ORDER = [0, 18, 5, 23, 10, 28, 15, 2, 20, 7, 25, 12, 30, 17, 4, 22, 9, 27, 14, 1, 19, 6, 24, 11, 29, 16, 3, 21, 8, 26, 13];
+            const DIATONIC_CHORDS_31 = [ {type: 'Major (31)', roman: 'I'}, {type: 'minor (31)', roman: 'ii'}, {type: 'minor (31)', roman: 'iii'}, {type: 'Major (31)', roman: 'IV'}, {type: 'Major (31)', roman: 'V'}, {type: 'minor (31)', roman: 'vi'}, {type: 'Diminished (31)', roman: 'vii°'} ];
             const EDO_SYSTEMS = {
                 19: {
                     names: ["C", "C♯", "D♭", "D", "D♯", "E♭", "F♭", "E", "F", "F♯", "G♭", "G", "G♯", "A♭", "A", "A♯", "B♭", "C♭", "B"],
@@ -482,6 +526,9 @@
             const masterVolumeSlider = document.getElementById('master-volume-slider');
             const overtoneComments = document.getElementById('overtone-comments');
             const zeitlerCredit = document.getElementById('zeitler-credit');
+            const comments19Edo = document.getElementById('comments-19-edo');
+            const comments24Edo = document.getElementById('comments-24-edo');
+            const comments31Edo = document.getElementById('comments-31-edo');
             const fretCountEl = document.getElementById('fret-count');
             const addLowStringBtn = document.getElementById('add-low-string'), addHighStringBtn = document.getElementById('add-high-string');
             const addFretBtn = document.getElementById('add-fret'), removeFretBtn = document.getElementById('remove-fret');
@@ -489,6 +536,8 @@
             const playStrumBtn = document.getElementById('play-strum-btn'), playShredBtn = document.getElementById('play-shred-btn');
             const recognizedChordDisplay = document.getElementById('recognized-chord-display'), recognizedScaleDisplay = document.getElementById('recognized-scale-display');
             const currentRootDisplay = document.getElementById('current-root-display'), currentNotesDisplay = document.getElementById('current-notes-display');
+            const currentIntervalsContainer = document.getElementById('current-intervals-container');
+            const currentIntervalsDisplay = document.getElementById('current-intervals-display');
             const scaleTypeSelect = document.getElementById('scale-type-select'), showScaleBtn = document.getElementById('show-scale-btn'), randomScaleBtn = document.getElementById('random-scale-btn'), notesPerStringSelect = document.getElementById('notes-per-string-select');
             const scaleSearchInput = document.getElementById('scale-search-input');
             const resetFretsBtn = document.getElementById('reset-frets'), toggleTuningBtn = document.getElementById('toggle-tuning-panel'), displayModeSelect = document.getElementById('display-mode'), setupSelect = document.getElementById('setup-select');
@@ -497,6 +546,10 @@
             const toggleScaleSetBtn = document.getElementById('toggle-scale-set-btn');
             const midiInSelect = document.getElementById('midi-in-select'), midiOutSelect = document.getElementById('midi-out-select');
             const cofSvg = document.getElementById('cof-svg'), cofLockBtn = document.getElementById('cof-lock-btn'), cofLockIcon = document.getElementById('cof-lock-icon');
+            const cof19Container = document.getElementById('circle-of-fifths-19-container');
+            const cof19Svg = document.getElementById('cof-19-svg'), cof19LockBtn = document.getElementById('cof-19-lock-btn'), cof19LockIcon = document.getElementById('cof-19-lock-icon');
+            const cof31Container = document.getElementById('circle-of-fifths-31-container');
+            const cof31Svg = document.getElementById('cof-31-svg'), cof31LockBtn = document.getElementById('cof-31-lock-btn'), cof31LockIcon = document.getElementById('cof-31-lock-icon');
             const scaleModesContainer = document.getElementById('scale-modes-container'), scaleModesList = document.getElementById('scale-modes-list');
             // Tab DOM elements
             const tabGrid = document.getElementById('tab-grid'), tabPlayhead = document.getElementById('tab-playhead'), tempoInput = document.getElementById('tempo-input'), textTabIo = document.getElementById('text-tab-io'), midiFileInput = document.getElementById('midi-file-input');
@@ -504,6 +557,7 @@
             const importTextTabBtn = document.getElementById('import-text-tab-btn'), exportTextTabBtn = document.getElementById('export-text-tab-btn'), exportMidiBtn = document.getElementById('export-midi-btn');
 
             // --- HELPER, PHYSICS & CHORD/SCALE FUNCTIONS ---
+            function getRootFrequency(octave = 3) { if (!rootNoteSelect.value) return 0; const C0_HZ = 16.351597831287414; const rootStepInOctave = parseInt(rootNoteSelect.value, 10); const edo = state.temperament || 12; const absoluteStep = octave * edo + rootStepInOctave; return C0_HZ * Math.pow(2, absoluteStep / edo); }
             function stepsToIntervals(steps) { const intervals = [0]; let currentSemitone = 0; for (let i = 0; i < steps.length - 1; i++) { currentSemitone += parseInt(steps[i], 10); intervals.push(currentSemitone); } return intervals; }
             function chordStepsToAbsoluteIntervals(steps) { if (!steps) return [0]; const intervals = [0]; let currentSemitone = 0; for (const step of steps) { currentSemitone += parseInt(step, 10); intervals.push(currentSemitone); } return intervals; }
             function getVisualThickness(gauge) { const minGauge = 0.007, maxGauge = 0.110, minPx = 1.0, maxPx = 7.0; const clampedGauge = Math.max(minGauge, Math.min(gauge, maxGauge)); const gaugeRange = maxGauge - minGauge, pxRange = maxPx - minPx; return minPx + ((clampedGauge - minGauge) / gaugeRange) * pxRange; }
@@ -602,6 +656,9 @@
                 if (state.isLeftHanded) fretboardWrapper.classList.add('left-handed'); else fretboardWrapper.classList.remove('left-handed');
                 
                 overtoneComments.style.display = (state.instrumentMode === 'overtone') ? 'block' : 'none';
+                comments19Edo.style.display = (state.temperament === 19) ? 'block' : 'none';
+                comments24Edo.style.display = (state.temperament === 24) ? 'block' : 'none';
+                comments31Edo.style.display = (state.temperament === 31) ? 'block' : 'none';
 
                 const isManualMode = !state.currentChord && !state.currentScale;
                 const recognizedChord = (isManualMode && state.temperament === 12) ? recognizeChord(state.notes) : null;
@@ -635,6 +692,8 @@
                 }
                 
                 cofSvg.parentElement.style.display = state.temperament === 12 ? 'flex' : 'none';
+                cof19Container.style.display = state.temperament === 19 ? 'flex' : 'none';
+                cof31Container.style.display = state.temperament === 31 ? 'flex' : 'none';
                 scaleModesContainer.style.display = state.currentScale ? 'flex' : 'none';
 
                 stringControlsContainer.innerHTML = ''; fretboardContainer.innerHTML = ''; fretNumbersContainer.innerHTML = '';
@@ -694,24 +753,26 @@
                             break;
                         case 'intervals':
                         case 'intervals_roman':
-                            if (state.temperament === 12) {
-                                const rootNoteIndex = parseInt(rootNoteSelect.value);
-                                const rootMidi = 48 + rootNoteIndex;
-                                const intervalSemitones = edoInfo.midi - rootMidi;
+                            const rootFreq = getRootFrequency();
+                            const rootEdoInfo = frequencyToEdoInfo(rootFreq);
+
+                            if (rootEdoInfo && edoInfo) {
+                                const intervalSteps = edoInfo.absoluteStep - rootEdoInfo.absoluteStep;
                                 
-                                if (state.noteDisplayMode === 'intervals_roman') {
-                                    const normalizedInterval = (intervalSemitones % 12 + 12) % 12;
-                                    label = ROMAN_INTERVAL_NAMES[normalizedInterval] || '?';
+                                if (state.temperament === 12) {
+                                    if (state.noteDisplayMode === 'intervals_roman') {
+                                        const normalizedInterval = (intervalSteps % 12 + 12) % 12;
+                                        label = ROMAN_INTERVAL_NAMES[normalizedInterval] || '?';
+                                    } else {
+                                        label = note.interval || INTERVAL_NAMES[intervalSteps] || INTERVAL_NAMES[(intervalSteps % 12 + 12) % 12] || '?';
+                                    }
                                 } else {
-                                    label = note.interval || INTERVAL_NAMES[intervalSemitones] || INTERVAL_NAMES[(intervalSemitones % 12 + 12) % 12] || '?';
+                                    const edoData = EDO_SYSTEMS[state.temperament] || {};
+                                    const normalizedInterval = (intervalSteps % state.temperament + state.temperament) % state.temperament;
+                                    label = (edoData.intervals && edoData.intervals[normalizedInterval]) ? edoData.intervals[normalizedInterval] : `${intervalSteps}`;
                                 }
                             } else {
-                                const rootNoteIndex12 = parseInt(rootNoteSelect.value);
-                                const rootFreq = midiToFrequency(48 + rootNoteIndex12);
-                                const rootEdoInfo = frequencyToEdoInfo(rootFreq);
-                                const intervalSteps = edoInfo.absoluteStep - rootEdoInfo.absoluteStep;
-                                const edoData = EDO_SYSTEMS[state.temperament] || {};
-                                label = (edoData.intervals && edoData.intervals[(intervalSteps % state.temperament + state.temperament) % state.temperament]) ? edoData.intervals[(intervalSteps % state.temperament + state.temperament) % state.temperament] : `${intervalSteps}`;
+                                label = '?';
                             }
                             break;
                         case 'fingerings': noteEl.textContent = note.finger ? note.finger : (note.fret === -1 ? 'O' : (note.fret + 1)); break;
@@ -743,15 +804,15 @@
                     const noteExists = state.notes.some(n => n.string === stringIndex && n.fret === fretIndex);
 
                     // If a pre-defined chord or scale is active, interacting with the board
-                    // should switch to manual edit mode. We do this by nullifying the
-                    // current chord/scale state, which allows the recognition logic
-                    // to take over on the next render. The notes themselves are preserved.
+                    // should switch to manual edit mode.
                     if (state.currentChord || state.currentScale) {
                         state.currentChord = null;
                         state.currentScale = null;
                         currentRootDisplay.textContent = '';
                         currentNotesDisplay.textContent = '';
                         updateCircleOfFifths(null);
+                        updateCircleOfFifths19(null);
+                        updateCircleOfFifths31(null);
                         updateScaleModesDisplay();
                     }
 
@@ -806,9 +867,9 @@
                 const ratio = targetEdo / 12.0;
                 return intervals12.map(i => Math.round(i * ratio));
             }
-            function findEdoVoicing(rootNoteIndex12, edoIntervals) {
-                const rootFreq = midiToFrequency(48 + rootNoteIndex12);
-                const rootEdoInfo = frequencyToEdoInfo(rootFreq);
+            function findEdoVoicing(rootFrequency, edoIntervals) {
+                const rootEdoInfo = frequencyToEdoInfo(rootFrequency);
+                if (!rootEdoInfo) return []; // Guard
                 const rootAbsoluteStep = rootEdoInfo.absoluteStep;
                 const chordAbsoluteSteps = edoIntervals.map(i => rootAbsoluteStep + i);
                 
@@ -827,7 +888,7 @@
                 return voicing;
             }
             function handleShowChord() {
-                const rootNoteIndex = parseInt(rootNoteSelect.value);
+                const rootStep = parseInt(rootNoteSelect.value);
                 const chordType = chordTypeSelect.value;
                 const chordDef = state.currentChordDefs[chordType];
                 if (!chordDef) return;
@@ -836,32 +897,47 @@
                 
                 let voicing;
                 if (state.temperament === 12) {
-                    voicing = findChordVoicing(rootNoteIndex, chordType);
+                    voicing = findChordVoicing(rootStep, chordType);
                 } else {
+                    const rootFrequency = getRootFrequency();
                     const edoIntervals = convertIntervalsToEdo(baseIntervals, state.temperament);
-                    voicing = findEdoVoicing(rootNoteIndex, edoIntervals);
+                    voicing = findEdoVoicing(rootFrequency, edoIntervals);
                 }
                 
                 clearTheory(false);
-                state.currentChord = { root: rootNoteIndex, type: chordType, notes: voicing };
+                state.currentChord = { root: rootStep, type: chordType, notes: voicing };
                 state.notes = voicing;
                 
-                const rootNoteName = NOTE_NAMES[rootNoteIndex];
-                const noteNames = baseIntervals.map(i => NOTE_NAMES[(rootNoteIndex + i) % 12]).join(' · ');
+                const rootNoteName = rootNoteSelect.options[rootNoteSelect.selectedIndex].text;
+                let noteNames;
+                if (state.temperament === 12) {
+                    noteNames = baseIntervals.map(i => NOTE_NAMES[(rootStep + i) % 12]).join(' · ');
+                } else {
+                    const edoData = EDO_SYSTEMS[state.temperament] || { names: [] };
+                    const edoIntervals = convertIntervalsToEdo(baseIntervals, state.temperament);
+                    noteNames = edoIntervals.map(i => edoData.names[(rootStep + i) % state.temperament] || '?').join(' · ');
+                }
                 currentRootDisplay.textContent = `Root: ${rootNoteName}`;
                 currentNotesDisplay.textContent = `${chordType} (${state.temperament}-EDO): ${noteNames}`;
+                currentIntervalsContainer.style.display = 'none';
 
-                updateCircleOfFifths(rootNoteIndex, 'Major (Ionian)');
+                if (state.temperament === 12) {
+                    updateCircleOfFifths(rootStep, 'Major (Ionian)');
+                } else {
+                    updateCircleOfFifths(null); // Clear the 12-EDO one
+                    updateCircleOfFifths19(null); // Clear the 19-EDO one
+                    updateCircleOfFifths31(null);
+                }
                 updateScaleModesDisplay();
                 renderApp();
             }
-            function showScaleOnFretboard(rootNoteIndex12, edoIntervals, scaleType) {
+            function showScaleOnFretboard(rootFrequency, edoIntervals, scaleType) {
                 clearTheory(false);
-                state.currentScale = { root: rootNoteIndex12, type: scaleType, intervals: edoIntervals };
+                state.currentScale = { root: parseInt(rootNoteSelect.value), type: scaleType, intervals: edoIntervals };
                 state.notesPerStringLimit = notesPerStringSelect.value;
                 
-                const rootFreq = midiToFrequency(48 + rootNoteIndex12);
-                const rootEdoInfo = frequencyToEdoInfo(rootFreq);
+                const rootEdoInfo = frequencyToEdoInfo(rootFrequency);
+                if (!rootEdoInfo) { state.notes = []; renderApp(); return; } // Guard
                 const rootStepInOctave = rootEdoInfo.stepInOctave;
                 const scaleStepsInOctave = new Set(edoIntervals.map(i => (rootStepInOctave + i) % state.temperament));
 
@@ -911,29 +987,57 @@
                 renderApp();
             }
             function handleShowScale() {
-                const rootNoteIndex = parseInt(rootNoteSelect.value);
+                const rootStep = parseInt(rootNoteSelect.value);
                 const scaleType = scaleTypeSelect.value;
                 const edoIntervals = state.currentScaleDefs[scaleType];
                 if (!edoIntervals) return;
 
-                const rootNoteName = NOTE_NAMES[rootNoteIndex];
+                const rootNoteName = rootNoteSelect.options[rootNoteSelect.selectedIndex].text;
                 let noteNames;
                 if (state.temperament === 12) {
-                    noteNames = edoIntervals.map(i => NOTE_NAMES[(rootNoteIndex + i) % 12]).join(' · ');
+                    noteNames = edoIntervals.map(i => NOTE_NAMES[(rootStep + i) % 12]).join(' · ');
                 } else {
-                    const rootFreq = midiToFrequency(48 + rootNoteIndex);
-                    const rootEdoInfo = frequencyToEdoInfo(rootFreq);
-                    const rootStepInOctave = rootEdoInfo.stepInOctave;
                     const edoData = EDO_SYSTEMS[state.temperament] || { names: [] };
-                    noteNames = edoIntervals.map(i => edoData.names[(rootStepInOctave + i) % state.temperament] || '?').join(' · ');
+                    noteNames = edoIntervals.map(i => edoData.names[(rootStep + i) % state.temperament] || '?').join(' · ');
                 }
 
                 currentRootDisplay.textContent = `Root: ${rootNoteName}`;
                 currentNotesDisplay.textContent = `Scale (${scaleType} in ${state.temperament}-EDO): ${noteNames}`;
 
-                showScaleOnFretboard(rootNoteIndex, edoIntervals, scaleType);
-                updateCircleOfFifths(rootNoteIndex, scaleType);
-                updateScaleModesDisplay(scaleType, rootNoteIndex);
+                // --- NEW LOGIC for INTERVAL DISPLAY ---
+                let intervalNames;
+                if (state.temperament === 12) {
+                    intervalNames = edoIntervals.map(i => INTERVAL_NAMES[i] || '?');
+                } else if (EDO_SYSTEMS[state.temperament]) {
+                    const edoData = EDO_SYSTEMS[state.temperament];
+                    intervalNames = edoIntervals.map(i => (edoData.intervals && edoData.intervals[i]) ? edoData.intervals[i] : `S:${i}`);
+                }
+
+                if(intervalNames) {
+                    currentIntervalsDisplay.textContent = `Intervals: ${intervalNames.join(' · ')}`;
+                    currentIntervalsContainer.style.display = 'flex';
+                } else {
+                    currentIntervalsContainer.style.display = 'none';
+                }
+                // --- END NEW LOGIC ---
+
+                showScaleOnFretboard(getRootFrequency(), edoIntervals, scaleType);
+
+                // Clear all circles first
+                updateCircleOfFifths(null);
+                updateCircleOfFifths19(null);
+                updateCircleOfFifths31(null);
+
+                // Then, update the correct one based on the current temperament
+                if (state.temperament === 12) {
+                    updateCircleOfFifths(rootStep, scaleType);
+                } else if (state.temperament === 19) {
+                    updateCircleOfFifths19(rootStep, scaleType);
+                } else if (state.temperament === 31) {
+                    updateCircleOfFifths31(rootStep, scaleType);
+                }
+
+                updateScaleModesDisplay(scaleType, getRootFrequency());
             }
             function handleRandomScale() { 
                 const options = Array.from(scaleTypeSelect.options);
@@ -949,9 +1053,12 @@
                 state.currentScale = null;
                 if (clearDisplays) {
                     updateCircleOfFifths(null);
+                    updateCircleOfFifths19(null);
+                    updateCircleOfFifths31(null);
                     updateScaleModesDisplay();
                     currentRootDisplay.textContent = '';
                     currentNotesDisplay.textContent = '';
+                    currentIntervalsContainer.style.display = 'none';
                 }
                 renderApp();
             }
@@ -991,6 +1098,7 @@
                 state.frets = numFrets; 
                 state.strings = Array.from({ length: numStrings }, (_, i) => createStringWithTuning(tuningHz[i], gauges[i]));
                 state.temperament = (typeof temperamentSystem === 'number') ? temperamentSystem : 12;
+                updateRootDropdown();
                 generateInitialFretPositions(temperamentSystem); 
             }
             function setupOvertoneSeries() {
@@ -1197,36 +1305,305 @@
             }
             function handleLockToggle() { 
                 state.isRootLocked = !state.isRootLocked; 
-                const lockCircle = cofLockBtn.querySelector('circle'); 
+                const lockCircle12 = cofLockBtn.querySelector('circle'); 
+                const lockCircle19 = cof19LockBtn.querySelector('circle'); 
+                const lockCircle31 = cof31LockBtn.querySelector('circle'); 
                 if (state.isRootLocked) { 
-                    lockCircle.classList.add('locked'); 
+                    lockCircle12.classList.add('locked'); 
+                    lockCircle19.classList.add('locked'); 
+                    lockCircle31.classList.add('locked'); 
                     cofLockIcon.textContent = '🔒'; 
+                    cof19LockIcon.textContent = '🔒'; 
+                    cof31LockIcon.textContent = '🔒'; 
                 } else { 
-                    lockCircle.classList.remove('locked'); 
+                    lockCircle12.classList.remove('locked'); 
+                    lockCircle19.classList.remove('locked'); 
+                    lockCircle31.classList.remove('locked'); 
                     cofLockIcon.textContent = '🔓'; 
+                    cof19LockIcon.textContent = '🔓'; 
+                    cof31LockIcon.textContent = '🔓'; 
                     if(state.currentScale) { handleShowScale() } 
                     else if(state.currentChord) { handleShowChord() } 
                 } 
             }
-            function updateScaleModesDisplay(parentScaleName, parentRootIndex) {
+            function createCircleOfFifths19() {
+                const centerX = 200, centerY = 200, radius = 170;
+                const noteNames19 = EDO_SYSTEMS[19].names;
+
+                for (let i = 0; i < 19; i++) {
+                    const pitchClass = COF_19_ORDER[i];
+                    const angle = (i * (360 / 19) - 90) * (Math.PI / 180);
+                    const x = centerX + radius * Math.cos(angle);
+                    const y = centerY + radius * Math.sin(angle);
+
+                    const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    group.classList.add('cof-note-group');
+                    group.setAttribute('data-pitch-class', pitchClass);
+                    group.id = `cof-19-note-${pitchClass}`;
+
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', x);
+                    circle.setAttribute('cy', y);
+                    circle.setAttribute('r', 25);
+                    circle.classList.add('cof-note-circle');
+
+                    const noteText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    noteText.setAttribute('x', x);
+                    noteText.setAttribute('y', y - 5);
+                    noteText.classList.add('cof-note-text');
+                    noteText.textContent = noteNames19[pitchClass];
+
+                    const romanText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    romanText.setAttribute('x', x);
+                    romanText.setAttribute('y', y + 8);
+                    romanText.classList.add('cof-roman-text');
+
+                    group.appendChild(circle);
+                    group.appendChild(noteText);
+                    group.appendChild(romanText);
+                    group.addEventListener('click', handleCof19Click);
+                    cof19Svg.insertBefore(group, cof19LockBtn);
+                }
+            }
+            function updateCircleOfFifths19(rootNoteIndex, scaleName) {
+                if (state.temperament !== 19) return;
+                
+                document.querySelectorAll('#cof-19-svg .cof-note-group').forEach(g => {
+                    g.querySelector('.cof-note-circle').classList.remove('highlight');
+                    g.querySelector('.cof-roman-text').textContent = '';
+                    g.dataset.chordType = ''; // Clear chord type as well
+                });
+
+                if (rootNoteIndex === null || rootNoteIndex === undefined || !scaleName) return;
+
+                const scaleIntervals = state.currentScaleDefs[scaleName] || [];
+                const isHeptatonic = scaleIntervals.length === 7;
+
+                scaleIntervals.forEach((interval, i) => {
+                    const notePitchClass = (rootNoteIndex + interval) % 19;
+                    const group = document.getElementById(`cof-19-note-${notePitchClass}`);
+                    if (group) {
+                        group.querySelector('.cof-note-circle').classList.add('highlight');
+                        const romanText = group.querySelector('.cof-roman-text');
+
+                        if (isHeptatonic) {
+                            // For 7-note scales, use the full diatonic chord info
+                            romanText.textContent = DIATONIC_CHORDS_19[i].roman;
+                            group.dataset.chordType = DIATONIC_CHORDS_19[i].type;
+                        } else {
+                            // For other scales (e.g., pentatonic), just show the scale degree number
+                            romanText.textContent = `${i + 1}`;
+                            // Set a default chord type for clicking
+                            group.dataset.chordType = 'Major (19)'; 
+                        }
+                    }
+                });
+            }
+            function handleCof19Click(e) {
+                const group = e.currentTarget;
+                const pitchClass = parseInt(group.dataset.pitchClass);
+                const chordType = group.dataset.chordType || 'Major (19)';
+
+                if (state.interactionMode === 'play') {
+                    const rootFreq = getRootFrequency(); // Gets root based on dropdown
+                    const baseEdoInfo = frequencyToEdoInfo(rootFreq);
+                    if (!baseEdoInfo) return; // Guard against no EDO info
+                    const clickedEdoInfo = { ...baseEdoInfo, stepInOctave: pitchClass };
+                    const rootAbsoluteStep = baseEdoInfo.absoluteStep;
+                    const clickedOffset = clickedEdoInfo.stepInOctave - baseEdoInfo.stepInOctave;
+
+                    const chordDef = state.currentChordDefs[chordType];
+                    if (!chordDef) return; // Guard against no chord def
+                    const chordIntervals = chordStepsToAbsoluteIntervals(chordDef.steps);
+                    const frequencies = chordIntervals.map(interval => {
+                        const edoStep = rootAbsoluteStep + clickedOffset + interval;
+                        return 16.351597831287414 * Math.pow(2, edoStep / 19);
+                    });
+                    AudioPlayer.playSequence(frequencies);
+                    return;
+                }
+                
+                if (!state.isRootLocked) {
+                    if (state.currentScale) {
+                        // If a scale is active, keep the scale and just change the root.
+                        rootNoteSelect.value = pitchClass;
+                        handleShowScale();
+                    } else {
+                        // Otherwise, default to showing the chord.
+                        rootNoteSelect.value = pitchClass;
+                        chordTypeSelect.value = chordType;
+                        handleShowChord();
+                    }
+                } else {
+                    // Logic for when the root is locked (unchanged)
+                    const rootFrequency = getRootFrequency();
+                    const chordDef = state.currentChordDefs[chordType];
+                    if (!chordDef) return;
+                    const edoIntervals = chordStepsToAbsoluteIntervals(chordDef.steps);
+                    const rootNoteEdoInfo = frequencyToEdoInfo(rootFrequency);
+                    if (!rootNoteEdoInfo) return;
+                    
+                    const newRootAbsoluteStep = Math.floor(rootNoteEdoInfo.absoluteStep / 19) * 19 + pitchClass;
+                    const newRootFreq = 16.351597831287414 * Math.pow(2, newRootAbsoluteStep / 19);
+                    
+                    const voicing = findEdoVoicing(newRootFreq, edoIntervals);
+                    
+                    state.notes = voicing;
+                    state.currentChord = { root: pitchClass, type: chordType, notes: voicing };
+                    
+                    const lockedRootName = EDO_SYSTEMS[19].names[parseInt(rootNoteSelect.value)];
+                    const clickedRootName = EDO_SYSTEMS[19].names[pitchClass];
+                    const chordNoteNames = edoIntervals.map(i => EDO_SYSTEMS[19].names[(pitchClass + i) % 19]).join(' · ');
+                    currentRootDisplay.textContent = `Key: ${lockedRootName} | Chord: ${clickedRootName} ${chordType}`;
+                    currentNotesDisplay.textContent = `Notes: ${chordNoteNames}`;
+                    renderApp();
+                }
+            }
+            function createCircleOfFifths31() {
+                const centerX = 250, centerY = 250, radius = 220;
+                const noteNames31 = EDO_SYSTEMS[31].names;
+
+                for (let i = 0; i < 31; i++) {
+                    const pitchClass = COF_31_ORDER[i];
+                    const angle = (i * (360 / 31) - 90) * (Math.PI / 180);
+                    const x = centerX + radius * Math.cos(angle);
+                    const y = centerY + radius * Math.sin(angle);
+
+                    const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    group.classList.add('cof-note-group');
+                    group.setAttribute('data-pitch-class', pitchClass);
+                    group.id = `cof-31-note-${pitchClass}`;
+
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', x);
+                    circle.setAttribute('cy', y);
+                    circle.setAttribute('r', 20);
+                    circle.classList.add('cof-note-circle');
+
+                    const noteText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    noteText.setAttribute('x', x);
+                    noteText.setAttribute('y', y - 5);
+                    noteText.classList.add('cof-note-text');
+                    noteText.textContent = noteNames31[pitchClass];
+
+                    const romanText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    romanText.setAttribute('x', x);
+                    romanText.setAttribute('y', y + 8);
+                    romanText.classList.add('cof-roman-text');
+
+                    group.appendChild(circle);
+                    group.appendChild(noteText);
+                    group.appendChild(romanText);
+                    group.addEventListener('click', handleCof31Click);
+                    cof31Svg.insertBefore(group, cof31LockBtn);
+                }
+            }
+            function updateCircleOfFifths31(rootNoteIndex, scaleName) {
+                if (state.temperament !== 31) return;
+                
+                document.querySelectorAll('#cof-31-svg .cof-note-group').forEach(g => {
+                    g.querySelector('.cof-note-circle').classList.remove('highlight');
+                    g.querySelector('.cof-roman-text').textContent = '';
+                    g.dataset.chordType = '';
+                });
+
+                if (rootNoteIndex === null || rootNoteIndex === undefined || !scaleName) return;
+
+                const scaleIntervals = state.currentScaleDefs[scaleName] || [];
+                const isHeptatonic = scaleIntervals.length === 7;
+
+                scaleIntervals.forEach((interval, i) => {
+                    const notePitchClass = (rootNoteIndex + interval) % 31;
+                    const group = document.getElementById(`cof-31-note-${notePitchClass}`);
+                    if (group) {
+                        group.querySelector('.cof-note-circle').classList.add('highlight');
+                        const romanText = group.querySelector('.cof-roman-text');
+
+                        if (isHeptatonic) {
+                            romanText.textContent = DIATONIC_CHORDS_31[i].roman;
+                            group.dataset.chordType = DIATONIC_CHORDS_31[i].type;
+                        } else {
+                            romanText.textContent = `${i + 1}`;
+                            group.dataset.chordType = 'Major (31)'; 
+                        }
+                    }
+                });
+            }
+            function handleCof31Click(e) {
+                const group = e.currentTarget;
+                const pitchClass = parseInt(group.dataset.pitchClass);
+                const chordType = group.dataset.chordType || 'Major (31)';
+
+                if (state.interactionMode === 'play') {
+                    const rootFreq = getRootFrequency();
+                    const baseEdoInfo = frequencyToEdoInfo(rootFreq);
+                    if (!baseEdoInfo) return;
+                    const clickedEdoInfo = { ...baseEdoInfo, stepInOctave: pitchClass };
+                    const rootAbsoluteStep = baseEdoInfo.absoluteStep;
+                    const clickedOffset = clickedEdoInfo.stepInOctave - baseEdoInfo.stepInOctave;
+
+                    const chordDef = state.currentChordDefs[chordType];
+                    if (!chordDef) return;
+                    const chordIntervals = chordStepsToAbsoluteIntervals(chordDef.steps);
+                    const frequencies = chordIntervals.map(interval => {
+                        const edoStep = rootAbsoluteStep + clickedOffset + interval;
+                        return 16.351597831287414 * Math.pow(2, edoStep / 31);
+                    });
+                    AudioPlayer.playSequence(frequencies);
+                    return;
+                }
+                
+                if (!state.isRootLocked) {
+                    if (state.currentScale) {
+                        rootNoteSelect.value = pitchClass;
+                        handleShowScale();
+                    } else {
+                        rootNoteSelect.value = pitchClass;
+                        chordTypeSelect.value = chordType;
+                        handleShowChord();
+                    }
+                } else {
+                    const rootFrequency = getRootFrequency();
+                    const chordDef = state.currentChordDefs[chordType];
+                    if (!chordDef) return;
+                    const edoIntervals = chordStepsToAbsoluteIntervals(chordDef.steps);
+                    const rootNoteEdoInfo = frequencyToEdoInfo(rootFrequency);
+                    if (!rootNoteEdoInfo) return;
+                    
+                    const newRootAbsoluteStep = Math.floor(rootNoteEdoInfo.absoluteStep / 31) * 31 + pitchClass;
+                    const newRootFreq = 16.351597831287414 * Math.pow(2, newRootAbsoluteStep / 31);
+                    
+                    const voicing = findEdoVoicing(newRootFreq, edoIntervals);
+                    
+                    state.notes = voicing;
+                    state.currentChord = { root: pitchClass, type: chordType, notes: voicing };
+                    
+                    const lockedRootName = EDO_SYSTEMS[31].names[parseInt(rootNoteSelect.value)];
+                    const clickedRootName = EDO_SYSTEMS[31].names[pitchClass];
+                    const chordNoteNames = edoIntervals.map(i => EDO_SYSTEMS[31].names[(pitchClass + i) % 31]).join(' · ');
+                    currentRootDisplay.textContent = `Key: ${lockedRootName} | Chord: ${clickedRootName} ${chordType}`;
+                    currentNotesDisplay.textContent = `Notes: ${chordNoteNames}`;
+                    renderApp();
+                }
+            }
+            function updateScaleModesDisplay(parentScaleName, parentRootFrequency) {
                 scaleModesList.innerHTML = '';
                 const parentIntervals = state.currentScaleDefs[parentScaleName];
 
-                if (!parentScaleName || !parentIntervals || !state.scaleStepsToNameMap) {
+                if (!parentScaleName || !parentIntervals || !state.scaleStepsToNameMap || !parentRootFrequency) {
                     scaleModesContainer.style.display = 'none';
                     return;
                 }
                 scaleModesContainer.style.display = 'flex';
 
-                const rootFreq = midiToFrequency(48 + parentRootIndex);
+                const rootFreq = parentRootFrequency;
                 const rootEdoInfo = frequencyToEdoInfo(rootFreq);
+                if (!rootEdoInfo) return; // Guard
                 const rootStepInOctave = rootEdoInfo.stepInOctave;
 
                 parentIntervals.forEach((interval, i) => {
                     const modeRootStep = (rootStepInOctave + interval) % state.temperament;
-                    const modeRootName = (state.temperament === 12) 
-                        ? NOTE_NAMES[(parentRootIndex + interval) % 12] 
-                        : (EDO_SYSTEMS[state.temperament]?.names[modeRootStep] || `S:${modeRootStep}`);
+                    const modeRootName = (EDO_SYSTEMS[state.temperament]?.names[modeRootStep] || `S:${modeRootStep}`);
 
                     const modeIntervals = parentIntervals.map(p_int => (p_int - interval + state.temperament) % state.temperament).sort((a, b) => a - b);
                     const modeSteps = modeIntervals.map((n, j) => {
@@ -1252,19 +1629,20 @@
                     li.appendChild(textContainer);
                     
                     li.addEventListener('click', () => {
+                        const modeRootFreq = rootFreq * Math.pow(2, interval / state.temperament);
                         if (state.interactionMode === 'play') {
-                            const modeRootFreq = rootFreq * Math.pow(2, interval / state.temperament);
                             const frequencies = modeIntervals.map(iv => modeRootFreq * Math.pow(2, iv / state.temperament));
                             AudioPlayer.playSequence(frequencies);
                             return;
                         }
 
                         if (foundModeName) {
-                            const modeRootFreq = rootFreq * Math.pow(2, interval / state.temperament);
-                            const newRootMidi = frequencyToMidi(modeRootFreq);
-                            rootNoteSelect.value = newRootMidi % 12;
-                            scaleTypeSelect.value = foundModeName;
-                            handleShowScale();
+                            const newRootEdoInfo = frequencyToEdoInfo(modeRootFreq);
+                            if (newRootEdoInfo) {
+                                rootNoteSelect.value = newRootEdoInfo.stepInOctave;
+                                scaleTypeSelect.value = foundModeName;
+                                handleShowScale();
+                            }
                         }
                     });
                     scaleModesList.appendChild(li);
@@ -1439,9 +1817,31 @@
                 updateScaleDropdown();
             }
 
-            function populateRootDropdown() {
+            function updateRootDropdown() {
+                const currentRootValue = rootNoteSelect.value;
                 rootNoteSelect.innerHTML = '';
-                NOTE_NAMES.forEach((name, i) => rootNoteSelect.innerHTML += `<option value="${i}">${name}</option>`);
+                const edo = state.temperament || 12;
+                let noteNames;
+                
+                if (edo === 12) {
+                    noteNames = NOTE_NAMES;
+                } else if (EDO_SYSTEMS[edo] && EDO_SYSTEMS[edo].names) {
+                    noteNames = EDO_SYSTEMS[edo].names;
+                } else {
+                    // Fallback for EDOs without defined names
+                    noteNames = Array.from({length: edo}, (_, i) => `Step ${i+1}`);
+                }
+
+                noteNames.forEach((name, i) => {
+                    rootNoteSelect.innerHTML += `<option value="${i}">${name}</option>`;
+                });
+                
+                // Try to preserve selection if possible
+                if (rootNoteSelect.querySelector(`option[value="${currentRootValue}"]`)) {
+                    rootNoteSelect.value = currentRootValue;
+                } else {
+                    rootNoteSelect.selectedIndex = 0; // Default to first note
+                }
             }
             function updateGlobalControls() { 
                 fretCountEl.textContent = state.frets; 
@@ -1484,6 +1884,8 @@
             notesPerStringSelect.addEventListener('change', (e) => { if (state.currentScale) { handleShowScale(); } });
             setupSelect.addEventListener('change', handleSetupChange);
             cofLockBtn.addEventListener('click', handleLockToggle);
+            cof19LockBtn.addEventListener('click', handleLockToggle);
+            cof31LockBtn.addEventListener('click', handleLockToggle);
             zoomSlider.addEventListener('input', e => { fretboardWrapper.style.width = `${100 + e.target.value * 2}%`; });
             masterVolumeSlider.addEventListener('input', e => { 
                 const newVolume = parseFloat(e.target.value) / 100;
@@ -1514,8 +1916,9 @@
                 ALL_SCALE_DEFINITIONS_FOR_RECOGNITION[scaleName] = stepsToIntervals(all12EDOScaleSteps[scaleName]);
             }
             
-            populateRootDropdown();
             createCircleOfFifths();
+            createCircleOfFifths19();
+            createCircleOfFifths31();
             initMidi();
             setTuning(6, 12, GUITAR_TUNING_HZ, GUITAR_GAUGES, 12); 
             updateTheoryDefinitions();
