@@ -156,6 +156,13 @@
                         <option value="move_fret">Move A Fret</option>
                     </select>
                 </div>
+                <div class="control-group">
+                    <label>Sound Type:</label>
+                    <select id="sound-type-select">
+                        <option value="acoustic" selected>Acoustic</option>
+                        <option value="distortion">Distortion</option>
+                    </select>
+                </div>
                 <div class="control-group"><label>Note Display:</label><select id="display-mode"><option value="names">Note Names</option><option value="frequencies">Frequencies</option><option value="intervals">Intervals</option><option value="intervals_roman">Intervals (Roman)</option><option value="fingerings">Fingerings</option><option value="cents">Cents</option></select></div>
                 <div class="control-group"><label>Volume:</label><input type="range" id="master-volume-slider" min="0" max="100" value="80"></div>
                 <div class="control-group"><button id="show-fret-numbers-btn">Hide Fret #</button><button id="show-all-notes-btn">Show All Notes</button></div>
@@ -266,27 +273,26 @@
                 let masterGain;
 
                 // --- Sample-based audio settings ---
-                // Place multiple note samples in the same folder as this HTML file.
-                // The player will randomly select one for each note played to create variation.
-                // You can add or remove files from this list.
-                const SAMPLE_WAV_FILES = [
-                    'guitar-note-1.wav', 
-                    'guitar-note-2.wav', 
-                    'guitar-note-3.wav',
-                    'guitar-note-4.wav' // Example: add as many as you like
-                ];
-                // All samples in the array above MUST have the same base pitch. 
-                // Set that pitch's frequency here. An A2 (110.0 Hz) is a good choice.
-                const SAMPLE_BASE_HZ = 110.0;
-                let audioBuffers = [];
-                let isBufferLoading = false;
-                let isSampleReady = false;
+                const SAMPLE_CONFIG = {
+                    'acoustic': {
+                        files: ['guitar-note-1.wav', 'guitar-note-2.wav', 'guitar-note-3.wav', 'guitar-note-4.wav'],
+                        baseHz: 110.0 // All acoustic samples must have this base pitch
+                    },
+                    'distortion': {
+                        files: ['distguitar-note-1.wav', 'distguitar-note-2.wav'], // Add more distortion samples here
+                        baseHz: 110.0 // All distortion samples must have this base pitch
+                    }
+                };
+
+                let audioBuffers = {}; // Will store loaded buffers, e.g., audioBuffers.acoustic = [buffer1, buffer2]
+                let currentSoundType = 'acoustic';
+                let isInitialized = false;
+                let isLoading = false;
 
                 async function init() {
-                    if (isSampleReady || isBufferLoading) {
-                        return; // Already initialized or in progress
-                    }
+                    if (isInitialized || isLoading) return;
 
+                    isLoading = true;
                     if (!audioCtx) {
                         try {
                             audioCtx = new(window.AudioContext || window.webkitAudioContext)();
@@ -295,15 +301,17 @@
                             setVolume(state.masterVolume);
                         } catch (e) {
                             console.error("Could not create AudioContext.", e);
+                            isLoading = false;
                             return;
                         }
                     }
 
-                    if (audioBuffers.length === 0 && !isBufferLoading) {
-                        isBufferLoading = true;
-                        console.log("Loading audio samples...");
-
-                        const loadPromises = SAMPLE_WAV_FILES.map(async (file) => {
+                    console.log("Loading all sound sets...");
+                    for (const type in SAMPLE_CONFIG) {
+                        const config = SAMPLE_CONFIG[type];
+                        audioBuffers[type] = []; // Initialize array for this type
+                        
+                        const loadPromises = config.files.map(async (file) => {
                             try {
                                 const response = await fetch(file);
                                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -311,29 +319,25 @@
                                 return await audioCtx.decodeAudioData(arrayBuffer);
                             } catch (error) {
                                 console.warn(`Could not load or decode sample: ${file}. It will be skipped.`);
-                                return null; // Return null on failure
+                                return null;
                             }
                         });
 
-                        // Wait for all sample loading attempts to complete
-                        const loadedBuffers = await Promise.all(loadPromises);
-                        
-                        // Filter out any that failed to load (are null)
-                        audioBuffers = loadedBuffers.filter(buffer => buffer !== null);
+                        const loaded = await Promise.all(loadPromises);
+                        audioBuffers[type] = loaded.filter(b => b !== null); // Store only successfully loaded buffers
 
-                        if (audioBuffers.length > 0) {
-                            isSampleReady = true;
-                            console.log(`Successfully loaded ${audioBuffers.length} out of ${SAMPLE_WAV_FILES.length} audio samples.`);
+                        if (audioBuffers[type].length > 0) {
+                            console.log(`Loaded ${audioBuffers[type].length}/${config.files.length} samples for '${type}' sound.`);
                         } else {
-                            isSampleReady = false;
-                            console.warn(`No audio samples could be loaded. Falling back to synth sound.`);
+                            console.warn(`No samples loaded for '${type}' sound. It will fall back to synth.`);
                         }
-                        
-                        isBufferLoading = false;
                     }
+                    
+                    isInitialized = true;
+                    isLoading = false;
+                    console.log("Audio loading complete.");
                 }
 
-                // Fallback synthesizer, used if all WAV files fail to load.
                 function playNoteSynth(frequency, time) {
                     if (!audioCtx || frequency <= 0) return;
                     const now = audioCtx.currentTime;
@@ -350,38 +354,34 @@
                     osc1.start(startTime); osc1.stop(startTime + 2);
                 }
 
-                // Main function to play a note. It decides whether to use a sample or the synth.
                 async function playNote(frequency, time) {
-                    await init(); // Ensure context is ready and samples have been attempted to load
+                    await init();
                     
                     if (!audioCtx || frequency <= 0) return;
 
-                    if (!isSampleReady || audioBuffers.length === 0) {
+                    const buffersForCurrentType = audioBuffers[currentSoundType];
+                    
+                    if (!buffersForCurrentType || buffersForCurrentType.length === 0) {
                         playNoteSynth(frequency, time);
                         return;
                     }
-
-                    // --- Play using a randomly selected sample ---
+                    
                     const now = audioCtx.currentTime;
                     const startTime = now + time;
                     
-                    // Randomly select one of the loaded buffers
-                    const randomIndex = Math.floor(Math.random() * audioBuffers.length);
-                    const selectedBuffer = audioBuffers[randomIndex];
-
-                    // Create the source node for the sample
+                    const randomIndex = Math.floor(Math.random() * buffersForCurrentType.length);
+                    const selectedBuffer = buffersForCurrentType[randomIndex];
                     const source = audioCtx.createBufferSource();
                     source.buffer = selectedBuffer;
 
-                    // Calculate pitch shift in cents. This changes pitch without changing duration.
-                    const cents = 1200 * Math.log2(frequency / SAMPLE_BASE_HZ);
+                    const baseHz = SAMPLE_CONFIG[currentSoundType].baseHz;
+                    const cents = 1200 * Math.log2(frequency / baseHz);
                     source.detune.value = cents;
 
-                    // Create an envelope for the sound
                     const envelope = audioCtx.createGain();
                     envelope.gain.setValueAtTime(0, startTime);
-                    envelope.gain.linearRampToValueAtTime(1.0, startTime + 0.02); // Quick attack
-                    envelope.gain.exponentialRampToValueAtTime(0.0001, startTime + 2.0); // Slow release
+                    envelope.gain.linearRampToValueAtTime(1.0, startTime + 0.02);
+                    envelope.gain.exponentialRampToValueAtTime(0.0001, startTime + 2.0);
 
                     source.connect(envelope);
                     envelope.connect(masterGain);
@@ -399,14 +399,16 @@
                     }
                 }
 
-                /*
-                ABOUT THIS TECHNIQUE (RANDOM/ROUND-ROBIN SAMPLING):
-                Using multiple recordings of the same note and randomly picking one for playback is a common technique
-                called "round-robin sampling". It avoids the "machine gun" effect where playing the same note repeatedly
-                sounds robotic because it's the exact same recording. This adds a subtle, realistic variation to the sound.
-                */
+                function setSoundType(type) {
+                    if (SAMPLE_CONFIG[type]) {
+                        console.log(`Sound type changed to: ${type}`);
+                        currentSoundType = type;
+                    } else {
+                        console.warn(`Attempted to set unknown sound type: ${type}`);
+                    }
+                }
 
-                return { init, playNote, playSequence, setVolume };
+                return { init, playNote, playSequence, setVolume, setSoundType };
             })();
 
             // --- CONSTANTS ---
@@ -491,6 +493,7 @@
             const scaleSearchInput = document.getElementById('scale-search-input');
             const resetFretsBtn = document.getElementById('reset-frets'), toggleTuningBtn = document.getElementById('toggle-tuning-panel'), displayModeSelect = document.getElementById('display-mode'), setupSelect = document.getElementById('setup-select');
             const showFretNumbersBtn = document.getElementById('show-fret-numbers-btn'), showAllNotesBtn = document.getElementById('show-all-notes-btn'), reverseStringsBtn = document.getElementById('reverse-strings-btn'), leftHandedBtn = document.getElementById('left-handed-btn'), editPlayModeSelect = document.getElementById('edit-play-mode');
+            const soundTypeSelect = document.getElementById('sound-type-select');
             const toggleScaleSetBtn = document.getElementById('toggle-scale-set-btn');
             const midiInSelect = document.getElementById('midi-in-select'), midiOutSelect = document.getElementById('midi-out-select');
             const cofSvg = document.getElementById('cof-svg'), cofLockBtn = document.getElementById('cof-lock-btn'), cofLockIcon = document.getElementById('cof-lock-icon');
@@ -1450,6 +1453,7 @@
                 document.querySelectorAll('.remove-string-btn').forEach(btn => btn.disabled = (state.strings.length <= MIN_STRINGS)); 
             }
 
+            // Event Listeners
             addLowStringBtn.addEventListener('click', () => addString('low')); addHighStringBtn.addEventListener('click', () => addString('high')); addFretBtn.addEventListener('click', () => changeFrets(1)); removeFretBtn.addEventListener('click', () => changeFrets(-1));
             resetFretsBtn.addEventListener('click', () => { TabEditor.stop(); clearTheory(); state.instrumentMode = null; setTuning(6, 12, GUITAR_TUNING_HZ, GUITAR_GAUGES, 12); updateTheoryDefinitions(); TabEditor.init(); renderApp(); });
             toggleTuningBtn.addEventListener('click', () => { state.tuningPanelVisible = !state.tuningPanelVisible; renderApp(); });
@@ -1474,7 +1478,7 @@
             masterVolumeSlider.addEventListener('input', e => { 
                 const newVolume = parseFloat(e.target.value) / 100;
                 state.masterVolume = newVolume;
-                AudioPlayer.init(); // Init in case it hasn't been
+                AudioPlayer.init();
                 AudioPlayer.setVolume(newVolume);
             });
             toggleScaleSetBtn.addEventListener('click', () => {
@@ -1484,13 +1488,17 @@
                 updateTheoryDefinitions();
             });
             scaleSearchInput.addEventListener('input', updateScaleDropdown);
+            soundTypeSelect.addEventListener('change', (e) => {
+                AudioPlayer.setSoundType(e.target.value);
+                // Play a test note to confirm the sound change
+                AudioPlayer.playNote(midiToFrequency(60), 0); // Play a C4
+            });
             
             // --- INITIALIZATION ---
             JSON.parse(ZEITLER_SCALES_RAW).forEach(scale => {
                 ZEITLER_SCALE_DEFINITIONS[scale.name] = scale.steps;
             });
             
-            // This is only for the 12-EDO recognizer, so it's built from 12-EDO sources only.
             const all12EDOScaleSteps = { ...SCALE_DEFINITIONS, ...ZEITLER_SCALE_DEFINITIONS };
             for(const scaleName in all12EDOScaleSteps) {
                 ALL_SCALE_DEFINITIONS_FOR_RECOGNITION[scaleName] = stepsToIntervals(all12EDOScaleSteps[scaleName]);
@@ -1502,7 +1510,6 @@
             setTuning(6, 12, GUITAR_TUNING_HZ, GUITAR_GAUGES, 12); 
             updateTheoryDefinitions();
 
-            // Initialize the Tab Editor module
             TabEditor.setup({
                 state: state,
                 dom: { 
@@ -1518,7 +1525,7 @@
             });
             
             renderApp();
-            AudioPlayer.init(); // Pre-load the audio samples on page load
+            AudioPlayer.init();
         });
     </script>
 </body>
