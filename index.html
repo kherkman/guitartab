@@ -182,7 +182,7 @@
                 </div>
                 <div id="zoom-slider-container">
                     <label for="zoom-slider">Zoom:</label>
-                    <input type="range" id="zoom-slider" min="0" max="100" value="0">
+                    <input type="range" id="zoom-slider" min="0" max="100" value="50">
                 </div>
                 <div class="theory-display-container">
                     <div class="active-theory-display">
@@ -1536,6 +1536,9 @@
             
             renderApp();
             AudioPlayer.init();
+
+            // Apply initial zoom from the slider's default value
+            fretboardWrapper.style.width = `${100 + parseInt(zoomSlider.value, 10) * 2}%`;
         });
     </script>
 </body>
