@@ -132,7 +132,7 @@
                     <select id="scale-type-select" size="5"></select>
                 </div>
                 <div class="control-group">
-                    <button id="show-scale-btn">Show</button><button id="random-scale-btn">Random</button><select id="notes-per-string-select"><option value="all">All Notes</option><option value="3">3 per String</option><option value="4">4 per String</option></select>
+                    <button id="show-scale-btn">Show</button><button id="random-scale-btn">Random</button><select id="notes-per-string-select"><option value="all">All Scale Notes</option><option value="3">3 per String</option><option value="4">4 per String</option></select>
                 </div>
                 <div class="control-group"><button id="toggle-scale-set-btn">Show Zeitler Scales</button></div>
             </div>
@@ -263,40 +263,149 @@
             // --- AUDIO SYNTHESIS ---
             const AudioPlayer = (() => {
                 let audioCtx;
-                let masterGain; // Master gain node
+                let masterGain;
 
-                function init() {
+                // --- Sample-based audio settings ---
+                // Place multiple note samples in the same folder as this HTML file.
+                // The player will randomly select one for each note played to create variation.
+                // You can add or remove files from this list.
+                const SAMPLE_WAV_FILES = [
+                    'guitar-note-1.wav', 
+                    'guitar-note-2.wav', 
+                    'guitar-note-3.wav',
+                    'guitar-note-4.wav' // Example: add as many as you like
+                ];
+                // All samples in the array above MUST have the same base pitch. 
+                // Set that pitch's frequency here. An A2 (110.0 Hz) is a good choice.
+                const SAMPLE_BASE_HZ = 110.0;
+                let audioBuffers = [];
+                let isBufferLoading = false;
+                let isSampleReady = false;
+
+                async function init() {
+                    if (isSampleReady || isBufferLoading) {
+                        return; // Already initialized or in progress
+                    }
+
                     if (!audioCtx) {
-                        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                        masterGain = audioCtx.createGain();
-                        masterGain.connect(audioCtx.destination);
-                        setVolume(state.masterVolume); // Set initial volume
+                        try {
+                            audioCtx = new(window.AudioContext || window.webkitAudioContext)();
+                            masterGain = audioCtx.createGain();
+                            masterGain.connect(audioCtx.destination);
+                            setVolume(state.masterVolume);
+                        } catch (e) {
+                            console.error("Could not create AudioContext.", e);
+                            return;
+                        }
+                    }
+
+                    if (audioBuffers.length === 0 && !isBufferLoading) {
+                        isBufferLoading = true;
+                        console.log("Loading audio samples...");
+
+                        const loadPromises = SAMPLE_WAV_FILES.map(async (file) => {
+                            try {
+                                const response = await fetch(file);
+                                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                                const arrayBuffer = await response.arrayBuffer();
+                                return await audioCtx.decodeAudioData(arrayBuffer);
+                            } catch (error) {
+                                console.warn(`Could not load or decode sample: ${file}. It will be skipped.`);
+                                return null; // Return null on failure
+                            }
+                        });
+
+                        // Wait for all sample loading attempts to complete
+                        const loadedBuffers = await Promise.all(loadPromises);
+                        
+                        // Filter out any that failed to load (are null)
+                        audioBuffers = loadedBuffers.filter(buffer => buffer !== null);
+
+                        if (audioBuffers.length > 0) {
+                            isSampleReady = true;
+                            console.log(`Successfully loaded ${audioBuffers.length} out of ${SAMPLE_WAV_FILES.length} audio samples.`);
+                        } else {
+                            isSampleReady = false;
+                            console.warn(`No audio samples could be loaded. Falling back to synth sound.`);
+                        }
+                        
+                        isBufferLoading = false;
                     }
                 }
-                function playNote(frequency, time) {
+
+                // Fallback synthesizer, used if all WAV files fail to load.
+                function playNoteSynth(frequency, time) {
                     if (!audioCtx || frequency <= 0) return;
                     const now = audioCtx.currentTime;
                     const startTime = now + time;
                     const gain = 0.3;
                     const envelope = audioCtx.createGain();
-                    envelope.connect(masterGain); // Connect to master gain instead of destination
+                    envelope.connect(masterGain);
                     envelope.gain.setValueAtTime(0, startTime);
-                    envelope.gain.linearRampToValueAtTime(gain, startTime + 0.02); // Attack
-                    envelope.gain.exponentialRampToValueAtTime(gain * 0.5, startTime + 0.2); // Decay
-                    envelope.gain.exponentialRampToValueAtTime(0.0001, startTime + 1.5); // Release
-                    
+                    envelope.gain.linearRampToValueAtTime(gain, startTime + 0.02);
+                    envelope.gain.exponentialRampToValueAtTime(gain * 0.5, startTime + 0.2);
+                    envelope.gain.exponentialRampToValueAtTime(0.0001, startTime + 1.5);
                     const osc1 = audioCtx.createOscillator(); osc1.type = 'sine'; osc1.frequency.value = frequency; osc1.connect(envelope);
                     [2, 3, 4].forEach((multiple, i) => { const osc = audioCtx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = frequency * multiple; const oscGain = audioCtx.createGain(); oscGain.gain.value = gain / (multiple + i * 2); osc.connect(oscGain); oscGain.connect(envelope); osc.start(startTime); osc.stop(startTime + 1.5); });
                     osc1.start(startTime); osc1.stop(startTime + 2);
                 }
-                function playSequence(frequencies, delay = 0.08) { frequencies.forEach((freq, i) => { if (freq) playNote(freq, i * delay); }); }
-                // Function to set the master volume
+
+                // Main function to play a note. It decides whether to use a sample or the synth.
+                async function playNote(frequency, time) {
+                    await init(); // Ensure context is ready and samples have been attempted to load
+                    
+                    if (!audioCtx || frequency <= 0) return;
+
+                    if (!isSampleReady || audioBuffers.length === 0) {
+                        playNoteSynth(frequency, time);
+                        return;
+                    }
+
+                    // --- Play using a randomly selected sample ---
+                    const now = audioCtx.currentTime;
+                    const startTime = now + time;
+                    
+                    // Randomly select one of the loaded buffers
+                    const randomIndex = Math.floor(Math.random() * audioBuffers.length);
+                    const selectedBuffer = audioBuffers[randomIndex];
+
+                    // Create the source node for the sample
+                    const source = audioCtx.createBufferSource();
+                    source.buffer = selectedBuffer;
+
+                    // Calculate pitch shift in cents. This changes pitch without changing duration.
+                    const cents = 1200 * Math.log2(frequency / SAMPLE_BASE_HZ);
+                    source.detune.value = cents;
+
+                    // Create an envelope for the sound
+                    const envelope = audioCtx.createGain();
+                    envelope.gain.setValueAtTime(0, startTime);
+                    envelope.gain.linearRampToValueAtTime(1.0, startTime + 0.02); // Quick attack
+                    envelope.gain.exponentialRampToValueAtTime(0.0001, startTime + 2.0); // Slow release
+
+                    source.connect(envelope);
+                    envelope.connect(masterGain);
+                    
+                    source.start(startTime);
+                }
+
+                function playSequence(frequencies, delay = 0.08) {
+                    frequencies.forEach((freq, i) => { if (freq) playNote(freq, i * delay); });
+                }
+
                 function setVolume(level) {
                     if (masterGain) {
-                         // Use setTargetAtTime for smooth volume changes
                         masterGain.gain.setTargetAtTime(level, audioCtx.currentTime, 0.01);
                     }
                 }
+
+                /*
+                ABOUT THIS TECHNIQUE (RANDOM/ROUND-ROBIN SAMPLING):
+                Using multiple recordings of the same note and randomly picking one for playback is a common technique
+                called "round-robin sampling". It avoids the "machine gun" effect where playing the same note repeatedly
+                sounds robotic because it's the exact same recording. This adds a subtle, realistic variation to the sound.
+                */
+
                 return { init, playNote, playSequence, setVolume };
             })();
 
@@ -644,7 +753,6 @@
                             if (noteExists) { removeNote(stringIndex, fretIndex); }
                             break;
                         case 'play':
-                            AudioPlayer.init();
                             AudioPlayer.playNote(calculateFrettedFrequency(stringIndex, fretIndex), 0);
                             break;
                     }
@@ -906,7 +1014,6 @@
             // --- Note Playback & Animation ---
             function playNoteSequenceWithAnimation(notes, delay) {
                 if (!notes || notes.length === 0) return;
-                AudioPlayer.init();
                 notes.forEach((note, i) => {
                     setTimeout(() => {
                         const freq = calculateFrettedFrequency(note.string, note.fret);
@@ -1049,7 +1156,6 @@
                 const chordType = group.dataset.chordType || 'Major';
 
                 if (state.interactionMode === 'play') {
-                    AudioPlayer.init();
                     const rootMidi = 60 + pitchClass;
                     const chordSteps = CHORD_DEFINITIONS[chordType].steps;
                     const chordIntervals = chordStepsToAbsoluteIntervals(chordSteps);
@@ -1134,7 +1240,6 @@
                     
                     li.addEventListener('click', () => {
                         if (state.interactionMode === 'play') {
-                            AudioPlayer.init();
                             const modeRootFreq = rootFreq * Math.pow(2, interval / state.temperament);
                             const frequencies = modeIntervals.map(iv => modeRootFreq * Math.pow(2, iv / state.temperament));
                             AudioPlayer.playSequence(frequencies);
@@ -1369,7 +1474,7 @@
             masterVolumeSlider.addEventListener('input', e => { 
                 const newVolume = parseFloat(e.target.value) / 100;
                 state.masterVolume = newVolume;
-                AudioPlayer.init();
+                AudioPlayer.init(); // Init in case it hasn't been
                 AudioPlayer.setVolume(newVolume);
             });
             toggleScaleSetBtn.addEventListener('click', () => {
@@ -1413,6 +1518,7 @@
             });
             
             renderApp();
+            AudioPlayer.init(); // Pre-load the audio samples on page load
         });
     </script>
 </body>
