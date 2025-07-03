@@ -742,17 +742,27 @@
                     const fretIndex = parseInt(targetElement.dataset.fretIndex ?? noteEl?.dataset.fretIndex);
                     const noteExists = state.notes.some(n => n.string === stringIndex && n.fret === fretIndex);
 
+                    // If a pre-defined chord or scale is active, interacting with the board
+                    // should switch to manual edit mode. We do this by nullifying the
+                    // current chord/scale state, which allows the recognition logic
+                    // to take over on the next render. The notes themselves are preserved.
+                    if (state.currentChord || state.currentScale) {
+                        state.currentChord = null;
+                        state.currentScale = null;
+                        currentRootDisplay.textContent = '';
+                        currentNotesDisplay.textContent = '';
+                        updateCircleOfFifths(null);
+                        updateScaleModesDisplay();
+                    }
+
                     switch (state.interactionMode) {
                         case 'toggle_note':
-                            if (state.currentChord || state.currentScale) clearTheory();
                             if (noteExists) { removeNote(stringIndex, fretIndex); } else { addNote(stringIndex, fretIndex); }
                             break;
                         case 'insert':
-                            if (state.currentChord || state.currentScale) clearTheory();
                             if (!noteExists) { addNote(stringIndex, fretIndex); }
                             break;
                         case 'remove':
-                            if (state.currentChord || state.currentScale) clearTheory();
                             if (noteExists) { removeNote(stringIndex, fretIndex); }
                             break;
                         case 'play':
