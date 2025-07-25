@@ -117,6 +117,42 @@
         #scale-type-select { width: 100%; height: 120px; padding: 5px; } /* Use size attribute in HTML instead of height for consistency */
         #scale-type-select option { padding: 4px; }
 
+        /* --- Collapsible Section Styles --- */
+        .collapsible-header {
+            cursor: pointer;
+            position: relative;
+            padding-left: 20px; /* Space for arrow */
+            -webkit-user-select: none; /* Safari */
+            -ms-user-select: none; /* IE 10+ */
+            user-select: none; /* Standard */
+        }
+        .collapsible-header::before {
+            content: '▶';
+            position: absolute;
+            left: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: transform 0.2s ease-in-out;
+            font-size: 0.9em;
+            color: #ccc;
+        }
+        #tab-editor-container .collapsible-header::before {
+             top: 15px; /* Adjust for h3 */
+        }
+        .collapsible-header.active::before {
+            transform: translateY(-50%) rotate(90deg);
+        }
+        .collapsible-content {
+            /* JS will handle display, but can add transitions here */
+            overflow: hidden;
+            display: flex; /* Default state for content blocks */
+            flex-direction: column;
+            gap: 12px;
+        }
+        #tab-editor-container .collapsible-content {
+             gap: 15px; /* Match existing tab layout gaps */
+        }
+
     </style>
 </head>
 <body>
@@ -124,50 +160,56 @@
         <h1>Physics-Based Fretboard & Chord/Scale Library</h1>
         <div class="controls">
             <div class="control-section control-section-theory">
-                <h4>Music Theory</h4>
-                <div class="control-group"><label>Root Note:</label><select id="root-note-select"></select></div>
-                <div class="control-group"><label>Chord:</label><select id="chord-type-select"></select><button id="show-chord-btn">Show</button><button id="clear-fretboard-btn">Clear</button></div>
-                <div class="scale-select-container">
-                    <label>Scale:</label>
-                    <input type="text" id="scale-search-input" placeholder="Search scales...">
-                    <select id="scale-type-select" size="5"></select>
+                <h4 class="collapsible-header">Scales & Chords</h4>
+                <div class="collapsible-content">
+                    <div class="control-group"><label>Root Note:</label><select id="root-note-select"></select></div>
+                    <div class="control-group"><label>Chord:</label><select id="chord-type-select"></select><button id="show-chord-btn">Show</button><button id="clear-fretboard-btn">Clear</button></div>
+                    <div class="scale-select-container">
+                        <label>Scale:</label>
+                        <input type="text" id="scale-search-input" placeholder="Search scales...">
+                        <select id="scale-type-select" size="5"></select>
+                    </div>
+                    <div class="control-group">
+                        <button id="show-scale-btn">Show</button><button id="random-scale-btn">Random</button><select id="notes-per-string-select"><option value="all">All Scale Notes</option><option value="3">3 per String</option><option value="4">4 per String</option></select>
+                    </div>
+                    <div class="control-group"><button id="toggle-scale-set-btn">Show Zeitler Scales</button></div>
                 </div>
-                <div class="control-group">
-                    <button id="show-scale-btn">Show</button><button id="random-scale-btn">Random</button><select id="notes-per-string-select"><option value="all">All Scale Notes</option><option value="3">3 per String</option><option value="4">4 per String</option></select>
-                </div>
-                <div class="control-group"><button id="toggle-scale-set-btn">Show Zeitler Scales</button></div>
             </div>
             <div class="control-section control-section-instrument">
-                <h4>Instrument</h4>
-                <div class="control-group"><label for="setup-select">Presets:</label><select id="setup-select"><option value="" disabled selected>Select...</option><option value="guitar">Standard Guitar</option><option value="bass">Standard Bass</option><option value="ukulele">Standard Ukulele</option><option value="drop_d">Drop D</option><option value="open_g">Open G</option><option value="dadgad">DADGAD</option><option value="7_string">7-String Guitar</option><option value="8_string">8-String Guitar</option><option value="just_intonation">Just Intonation</option><option value="true_temperament">True Temperament</option><option value="19_edo">19-EDO</option><option value="24_edo">24-EDO (Quarter-tone)</option><option value="31_edo">31-EDO</option><option value="kantele_5_major">5-Str Kantele (Major)</option><option value="kantele_5_minor">5-Str Kantele (Minor)</option><option value="kantele_11">11-Str Kantele</option><option value="overtone">Overtone Series Demo</option></select></div>
-                <div class="control-group"><label>Strings:</label><button id="add-low-string">Add Low</button><button id="add-high-string">Add High</button></div>
-                <div class="control-group"><label>Frets:</label><button id="remove-fret">-</button><span id="fret-count">12</span><button id="add-fret">+</button></div>
-                <div class="control-group"><label>MIDI In:</label><select id="midi-in-select"><option value="">None</option></select><label>Out:</label><select id="midi-out-select"><option value="">None</option></select></div>
-                <div class="control-group"><button id="toggle-tuning-panel">Hide Tuning</button><button id="reverse-strings-btn">Spectator View</button><button id="left-handed-btn">Left Handed</button><button id="reset-frets">Reset Instrument</button></div>
+                <h4 class="collapsible-header">Instrument</h4>
+                 <div class="collapsible-content">
+                    <div class="control-group"><label for="setup-select">Presets:</label><select id="setup-select"><option value="" disabled selected>Select...</option><option value="guitar">Standard Guitar</option><option value="bass">Standard Bass</option><option value="ukulele">Standard Ukulele</option><option value="drop_d">Drop D</option><option value="open_g">Open G</option><option value="dadgad">DADGAD</option><option value="7_string">7-String Guitar</option><option value="8_string">8-String Guitar</option><option value="just_intonation">Just Intonation</option><option value="true_temperament">True Temperament</option><option value="19_edo">19-EDO</option><option value="24_edo">24-EDO (Quarter-tone)</option><option value="31_edo">31-EDO</option><option value="kantele_5_major">5-Str Kantele (Major)</option><option value="kantele_5_minor">5-Str Kantele (Minor)</option><option value="kantele_11">11-Str Kantele</option><option value="overtone">Overtone Series Demo</option></select></div>
+                    <div class="control-group"><label>Strings:</label><button id="add-low-string">Add Low</button><button id="add-high-string">Add High</button></div>
+                    <div class="control-group"><label>Frets:</label><button id="remove-fret">-</button><span id="fret-count">12</span><button id="add-fret">+</button></div>
+                    <div class="control-group"><label>MIDI In:</label><select id="midi-in-select"><option value="">None</option></select><label>Out:</label><select id="midi-out-select"><option value="">None</option></select></div>
+                    <div class="control-group"><button id="toggle-tuning-panel">Hide Tuning</button><button id="reverse-strings-btn">Spectator View</button><button id="left-handed-btn">Left Handed</button><button id="reset-frets">Reset Instrument</button></div>
+                </div>
             </div>
             <div class="control-section control-section-view">
-                <h4>Display & View</h4>
-                <div class="control-group">
-                    <label>Edit/Play Mode:</label>
-                    <select id="edit-play-mode">
-                        <option value="toggle_note" selected>Insert/Remove A Note</option>
-                        <option value="insert">Insert A Note</option>
-                        <option value="remove">Remove A Note</option>
-                        <option value="play">Play A Note</option>
-                        <option value="move_fret">Move A Fret</option>
-                    </select>
+                <h4 class="collapsible-header">Display & View</h4>
+                <div class="collapsible-content">
+                    <div class="control-group">
+                        <label>Edit/Play Mode:</label>
+                        <select id="edit-play-mode">
+                            <option value="toggle_note" selected>Insert/Remove A Note</option>
+                            <option value="insert">Insert A Note</option>
+                            <option value="remove">Remove A Note</option>
+                            <option value="play">Play A Note</option>
+                            <option value="move_fret">Move A Fret</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Sound Type:</label>
+                        <select id="sound-type-select">
+                            <option value="acoustic" selected>Acoustic</option>
+                            <option value="distortion">Distortion</option>
+                        </select>
+                    </div>
+                    <div class="control-group"><label>Note Display:</label><select id="display-mode"><option value="names">Note Names</option><option value="frequencies">Frequencies</option><option value="intervals">Intervals</option><option value="intervals_roman">Intervals (Roman)</option><option value="fingerings">Fingerings</option><option value="cents">Cents</option></select></div>
+                    <div class="control-group"><label>Volume:</label><input type="range" id="master-volume-slider" min="0" max="100" value="80"></div>
+                    <div class="control-group"><button id="show-fret-numbers-btn">Hide Fret #</button><button id="show-all-notes-btn">Show All Notes</button></div>
+                    <div class="control-group"><button id="play-strum-btn">Play Strum</button><button id="play-shred-btn">Play Shred</button></div>
                 </div>
-                <div class="control-group">
-                    <label>Sound Type:</label>
-                    <select id="sound-type-select">
-                        <option value="acoustic" selected>Acoustic</option>
-                        <option value="distortion">Distortion</option>
-                    </select>
-                </div>
-                <div class="control-group"><label>Note Display:</label><select id="display-mode"><option value="names">Note Names</option><option value="frequencies">Frequencies</option><option value="intervals">Intervals</option><option value="intervals_roman">Intervals (Roman)</option><option value="fingerings">Fingerings</option><option value="cents">Cents</option></select></div>
-                <div class="control-group"><label>Volume:</label><input type="range" id="master-volume-slider" min="0" max="100" value="80"></div>
-                <div class="control-group"><button id="show-fret-numbers-btn">Hide Fret #</button><button id="show-all-notes-btn">Show All Notes</button></div>
-                <div class="control-group"><button id="play-strum-btn">Play Strum</button><button id="play-shred-btn">Play Shred</button></div>
             </div>
         </div>
         <div id="main-layout">
@@ -234,34 +276,36 @@
         
         <!-- --- TAB EDITOR SECTION --- -->
         <div id="tab-editor-container">
-            <h3>Tablature Editor & Player</h3>
-            <div class="tab-controls">
-                <div class="control-group">
-                    <button id="play-tab-btn">▶ Play</button>
-                    <button id="stop-tab-btn">■ Stop</button>
+            <h3 class="collapsible-header">Tablature Editor & Player</h3>
+            <div class="collapsible-content">
+                <div class="tab-controls">
+                    <div class="control-group">
+                        <button id="play-tab-btn">▶ Play</button>
+                        <button id="stop-tab-btn">■ Stop</button>
+                    </div>
+                    <div class="control-group">
+                        <label for="tempo-input">Tempo (BPM):</label>
+                        <input type="number" id="tempo-input" value="120" min="20" max="300">
+                    </div>
+                    <div class="control-group">
+                        <label>Columns:</label>
+                        <button id="remove-tab-col-btn" title="Remove last column">-</button>
+                        <button id="add-tab-col-btn" title="Add new column">+</button>
+                    </div>
                 </div>
-                <div class="control-group">
-                    <label for="tempo-input">Tempo (BPM):</label>
-                    <input type="number" id="tempo-input" value="120" min="20" max="300">
+                <div id="tab-grid-wrapper">
+                    <div id="tab-grid"></div>
+                    <div id="tab-playhead" style="display: none;"></div>
                 </div>
-                <div class="control-group">
-                    <label>Columns:</label>
-                    <button id="remove-tab-col-btn" title="Remove last column">-</button>
-                    <button id="add-tab-col-btn" title="Add new column">+</button>
-                </div>
-            </div>
-            <div id="tab-grid-wrapper">
-                <div id="tab-grid"></div>
-                <div id="tab-playhead" style="display: none;"></div>
-            </div>
-            <div class="tab-io-section">
-                <textarea id="text-tab-io" placeholder="Paste text tablature here... or export to here."></textarea>
-                <div class="tab-io-controls">
-                    <button id="import-text-tab-btn">Import from Text</button>
-                    <button id="export-text-tab-btn">Export to Text</button>
-                    <button id="export-midi-btn">Export to MIDI</button>
-                    <label for="midi-file-input" id="midi-file-label">Import from MIDI</label>
-                    <input type="file" id="midi-file-input" accept=".mid,.midi">
+                <div class="tab-io-section">
+                    <textarea id="text-tab-io" placeholder="Paste text tablature here... or export to here."></textarea>
+                    <div class="tab-io-controls">
+                        <button id="import-text-tab-btn">Import from Text</button>
+                        <button id="export-text-tab-btn">Export to Text</button>
+                        <button id="export-midi-btn">Export to MIDI</button>
+                        <label for="midi-file-input" id="midi-file-label">Import from MIDI</label>
+                        <input type="file" id="midi-file-input" accept=".mid,.midi">
+                    </div>
                 </div>
             </div>
         </div>
@@ -510,7 +554,7 @@
 
             // --- STATE ---
             let state = { 
-                strings: [], frets: 12, notes: [], fretPositions: [], currentChord: null, currentScale: null, tuningPanelVisible: true, noteDisplayMode: 'names', notesPerStringLimit: 'all', showFretNumbers: true, isRootLocked: false, isPlayerView: true, isLeftHanded: false, interactionMode: 'toggle_note', midiAccess: null, midiInputs: [], midiOutputs: [], selectedMidiInId: null, selectedMidiOutId: null, activeMidiNotes: new Map(),
+                strings: [], frets: 12, notes: [], fretPositions: [], currentChord: null, currentScale: null, tuningPanelVisible: false, noteDisplayMode: 'names', notesPerStringLimit: 'all', showFretNumbers: true, isRootLocked: false, isPlayerView: true, isLeftHanded: false, interactionMode: 'toggle_note', midiAccess: null, midiInputs: [], midiOutputs: [], selectedMidiInId: null, selectedMidiOutId: null, activeMidiNotes: new Map(),
                 masterVolume: 0.8,
                 temperament: 12,
                 currentChordDefs: {},
@@ -1942,6 +1986,31 @@
 
             // Apply initial zoom from the slider's default value
             fretboardWrapper.style.width = `${100 + parseInt(zoomSlider.value, 10) * 2}%`;
+
+            // --- COLLAPSIBLE SECTIONS LOGIC ---
+            document.querySelectorAll('.collapsible-header').forEach(header => {
+                const content = header.nextElementSibling;
+                if (content && content.classList.contains('collapsible-content')) {
+                    // Hide by default
+                    content.style.display = 'none';
+                    header.classList.remove('active');
+
+                    header.addEventListener('click', () => {
+                        header.classList.toggle('active');
+                        if (content.style.display === 'none' || content.style.display === '') {
+                             // Restore original display type based on element
+                            if(content.parentElement.classList.contains('control-section')) {
+                                content.style.display = 'flex';
+                            } else {
+                                content.style.display = 'block';
+                            }
+                        } else {
+                            content.style.display = 'none';
+                        }
+                    });
+                }
+            });
+
         });
     </script>
 </body>
