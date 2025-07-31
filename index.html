@@ -106,7 +106,7 @@
         .tab-row { display: flex; align-items: center; border-bottom: 1px solid #555; }
         .tab-row:last-child { border-bottom: none; }
         .tab-string-name { font-weight: bold; color: #e0a800; padding: 0 10px; }
-        .tab-cell { background-color: transparent; color: #f0f0f0; border: none; font-family: inherit; font-size: inherit; text-align: center; width: 2.2ch; padding: 4px 0; border-radius: 3px; transition: background-color 0.2s; }
+        .tab-cell { background-color: transparent; color: #f0f0f0; border: none; font-family: inherit; font-size: inherit; text-align: left; width: 2.2ch; padding: 4px 2px; border-radius: 3px; transition: background-color 0.2s; }
         .tab-cell:focus { background-color: #555; outline: 1px solid #e0a800; }
         #tab-playhead { position: absolute; top: 0; bottom: 0; width: 2.2ch; background-color: rgba(224, 168, 0, 0.4); border-left: 2px solid #e0a800; pointer-events: none; transition: transform 0.05s linear; z-index: 100; }
         .tab-io-section { margin-top: 15px; display: flex; flex-direction: column; gap: 10px; }
@@ -218,7 +218,30 @@
             <div class="control-section control-section-instrument">
                 <h4 class="collapsible-header">Instrument</h4>
                  <div class="collapsible-content" style="display: none;">
-                    <div class="control-group"><label for="setup-select">Presets:</label><select id="setup-select"><option value="" disabled selected>Select...</option><option value="guitar">Standard Guitar</option><option value="bass">Standard Bass</option><option value="ukulele">Standard Ukulele</option><option value="drop_d">Drop D</option><option value="open_g">Open G</option><option value="dadgad">DADGAD</option><option value="7_string">7-String Guitar</option><option value="8_string">8-String Guitar</option><option value="just_intonation">Just Intonation</option><option value="true_temperament">True Temperament</option><option value="19_edo">19-EDO</option><option value="24_edo">24-EDO (Quarter-tone)</option><option value="31_edo">31-EDO</option><option value="kantele_5_major">5-Str Kantele (Major)</option><option value="kantele_5_minor">5-Str Kantele (Minor)</option><option value="kantele_11">11-Str Kantele</option><option value="overtone">Overtone Series Demo</option></select></div>
+                    <div class="control-group">
+                        <label for="setup-select">Presets:</label>
+                        <select id="setup-select">
+                            <option value="" disabled selected>Select...</option>
+                            <option value="guitar">Standard Guitar</option>
+                            <option value="bass">Standard Bass</option>
+                            <option value="ukulele">Standard Ukulele</option>
+                            <option value="saz">Saz</option>
+                            <option value="drop_d">Drop D</option>
+                            <option value="open_g">Open G</option>
+                            <option value="dadgad">DADGAD</option>
+                            <option value="7_string">7-String Guitar</option>
+                            <option value="8_string">8-String Guitar</option>
+                            <option value="just_intonation">Just Intonation</option>
+                            <option value="true_temperament">True Temperament</option>
+                            <option value="19_edo">19-EDO</option>
+                            <option value="24_edo">24-EDO (Quarter-tone)</option>
+                            <option value="31_edo">31-EDO</option>
+                            <option value="kantele_5_major">5-Str Kantele (Major)</option>
+                            <option value="kantele_5_minor">5-Str Kantele (Minor)</option>
+                            <option value="kantele_11">11-Str Kantele</option>
+                            <option value="overtone">Overtone Series Demo</option>
+                        </select>
+                    </div>
                     <div class="control-group"><label>Strings:</label><button id="add-low-string">Add Low</button><button id="add-high-string">Add High</button></div>
                     <div class="control-group"><label>Frets:</label><button id="remove-fret">-</button><span id="fret-count">12</span><button id="add-fret">+</button></div>
                     <div class="control-group"><label>MIDI In:</label><select id="midi-in-select"><option value="">None</option></select><label>Out:</label><select id="midi-out-select"><option value="">None</option></select></div>
