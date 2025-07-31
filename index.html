@@ -48,7 +48,12 @@
         .fret-divider { position: absolute; top: -5px; bottom: -5px; width: 4px; background-color: #aaa; z-index: 5; transform: translateX(-50%); border-left: 1px solid #777; border-right: 1px solid #777; }
         .open-string-space { width: 50px; flex-shrink: 0; background-color: rgba(0,0,0,0.1); }
         .fretted-area { flex: 1; display: flex; position: relative; border-left: 8px solid #f0f0f0; }
-        .note { position: absolute; top: 50%; width: 28px; height: 22px; line-height: 22px; background: radial-gradient(circle at 30% 30%, #4a90e2, #245a9e); border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 10; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.7); padding: 0 2px; }
+        .note { position: absolute; top: 50%; width: 28px; height: 22px; line-height: 22px; background: radial-gradient(circle at 30% 30%, #4a90e2, #245a9e); border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 10; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.7); padding: 0 2px; transition: box-shadow 0.2s, border-color 0.2s; }
+        .note.highlighted {
+            box-shadow: 0 0 10px 4px rgba(74, 144, 226, 0.9), 0 2px 5px rgba(0,0,0,0.5);
+            border-color: #fff;
+            z-index: 12;
+        }
         #zoom-slider-container { display: flex; align-items: center; gap: 10px; margin-top: 10px; justify-content: center; }
         #zoom-slider, #master-volume-slider { width: 200px; }
         #circle-of-fifths-container, #circle-of-fifths-19-container, #circle-of-fifths-31-container, #scale-modes-container { margin-top: 25px; display: flex; flex-direction: column; align-items: center; }
@@ -116,7 +121,14 @@
         #scale-search-input { width: 100%; text-align: left; padding-left: 8px; }
         #scale-type-select { width: 100%; height: 120px; padding: 5px; } /* Use size attribute in HTML instead of height for consistency */
         #scale-type-select option { padding: 4px; }
-
+        
+        /* Interval Color Picker Styles */
+        #interval-color-controls-container { flex-direction: column; align-items: flex-start; gap: 8px; }
+        #interval-color-controls { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-start; }
+        .interval-color-picker { display: flex; flex-direction: column; align-items: center; gap: 4px; background-color: #555; padding: 5px; border-radius: 4px;}
+        .interval-color-picker label { font-size: 0.8em; font-weight: normal; color: #ccc; }
+        .interval-color-picker input[type="color"] { width: 35px; height: 25px; border: 1px solid #777; padding: 0; cursor: pointer; border-radius: 3px;}
+        
         /* --- Collapsible Section Styles --- */
         .collapsible-header {
             cursor: pointer;
@@ -152,6 +164,32 @@
         #tab-editor-container .collapsible-content {
              gap: 15px; /* Match existing tab layout gaps */
         }
+        
+        /* --- Diatonic Chord Display Styles --- */
+        #diatonic-chords-container {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            min-height: 28px;
+        }
+        .diatonic-chord-btn {
+            padding: 5px 10px;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid #888;
+            border-radius: 5px;
+            background-color: #555;
+            color: #ddd;
+            font-weight: bold;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+        }
+        .diatonic-chord-btn:hover {
+            background-color: #e0a800;
+            color: #333;
+            border-color: #ffc107;
+        }
 
     </style>
 </head>
@@ -160,24 +198,26 @@
         <h1>Physics-Based Fretboard & Chord/Scale Library</h1>
         <div class="controls">
             <div class="control-section control-section-theory">
-                <h4 class="collapsible-header">Scales & Chords</h4>
-                <div class="collapsible-content">
+                <h4 class="collapsible-header active">Scales & Chords</h4>
+                <div class="collapsible-content" style="display: flex;">
+                    <div class="control-group" style="justify-content: center;"><button id="clear-fretboard-btn">Clear Fretboard</button></div>
                     <div class="control-group"><label>Root Note:</label><select id="root-note-select"></select></div>
-                    <div class="control-group"><label>Chord:</label><select id="chord-type-select"></select><button id="show-chord-btn">Show</button><button id="clear-fretboard-btn">Clear</button></div>
                     <div class="scale-select-container">
                         <label>Scale:</label>
                         <input type="text" id="scale-search-input" placeholder="Search scales...">
                         <select id="scale-type-select" size="5"></select>
                     </div>
                     <div class="control-group">
-                        <button id="show-scale-btn">Show</button><button id="random-scale-btn">Random</button><select id="notes-per-string-select"><option value="all">All Scale Notes</option><option value="3">3 per String</option><option value="4">4 per String</option></select>
+                        <button id="show-scale-btn">Show Scale</button><button id="random-scale-btn">Random</button>
                     </div>
                     <div class="control-group"><button id="toggle-scale-set-btn">Show Zeitler Scales</button></div>
+                    <div class="control-group"><label>Chord:</label><select id="chord-type-select"></select><button id="show-chord-btn">Show Chord</button></div>
+
                 </div>
             </div>
             <div class="control-section control-section-instrument">
                 <h4 class="collapsible-header">Instrument</h4>
-                 <div class="collapsible-content">
+                 <div class="collapsible-content" style="display: none;">
                     <div class="control-group"><label for="setup-select">Presets:</label><select id="setup-select"><option value="" disabled selected>Select...</option><option value="guitar">Standard Guitar</option><option value="bass">Standard Bass</option><option value="ukulele">Standard Ukulele</option><option value="drop_d">Drop D</option><option value="open_g">Open G</option><option value="dadgad">DADGAD</option><option value="7_string">7-String Guitar</option><option value="8_string">8-String Guitar</option><option value="just_intonation">Just Intonation</option><option value="true_temperament">True Temperament</option><option value="19_edo">19-EDO</option><option value="24_edo">24-EDO (Quarter-tone)</option><option value="31_edo">31-EDO</option><option value="kantele_5_major">5-Str Kantele (Major)</option><option value="kantele_5_minor">5-Str Kantele (Minor)</option><option value="kantele_11">11-Str Kantele</option><option value="overtone">Overtone Series Demo</option></select></div>
                     <div class="control-group"><label>Strings:</label><button id="add-low-string">Add Low</button><button id="add-high-string">Add High</button></div>
                     <div class="control-group"><label>Frets:</label><button id="remove-fret">-</button><span id="fret-count">12</span><button id="add-fret">+</button></div>
@@ -187,7 +227,7 @@
             </div>
             <div class="control-section control-section-view">
                 <h4 class="collapsible-header">Display & View</h4>
-                <div class="collapsible-content">
+                <div class="collapsible-content" style="display: none;">
                     <div class="control-group">
                         <label>Edit/Play Mode:</label>
                         <select id="edit-play-mode">
@@ -198,7 +238,7 @@
                             <option value="move_fret">Move A Fret</option>
                         </select>
                     </div>
-                    <div class="control-group">
+                     <div class="control-group">
                         <label>Sound Type:</label>
                         <select id="sound-type-select">
                             <option value="acoustic" selected>Acoustic</option>
@@ -206,9 +246,17 @@
                         </select>
                     </div>
                     <div class="control-group"><label>Note Display:</label><select id="display-mode"><option value="names">Note Names</option><option value="frequencies">Frequencies</option><option value="intervals">Intervals</option><option value="intervals_roman">Intervals (Roman)</option><option value="fingerings">Fingerings</option><option value="cents">Cents</option></select></div>
+                    <div class="control-group"><label>Notes Per String:</label><select id="notes-per-string-select"><option value="all">All Scale Notes</option><option value="3">3 per String</option><option value="4">4 per String</option></select></div>
+                    <div id="interval-color-controls-container" class="control-group">
+                        <label>Interval Colors:</label>
+                        <div id="interval-color-controls">
+                            <!-- Color pickers will be dynamically inserted here by main-app.js -->
+                        </div>
+                    </div>
                     <div class="control-group"><label>Volume:</label><input type="range" id="master-volume-slider" min="0" max="100" value="80"></div>
                     <div class="control-group"><button id="show-fret-numbers-btn">Hide Fret #</button><button id="show-all-notes-btn">Show All Notes</button></div>
                     <div class="control-group"><button id="play-strum-btn">Play Strum</button><button id="play-shred-btn">Play Shred</button></div>
+                    <div class="control-group"><button id="fullscreen-btn">Full Screen On/Off</button><button id="screenshot-btn">Save Screenshot (JPG)</button></div>
                 </div>
             </div>
         </div>
@@ -225,7 +273,7 @@
                 </div>
                 <div id="zoom-slider-container">
                     <label for="zoom-slider">Zoom:</label>
-                    <input type="range" id="zoom-slider" min="0" max="100" value="50">
+                    <input type="range" id="zoom-slider" min="0" max="100" value="80">
                 </div>
                 <div class="theory-display-container">
                     <div class="active-theory-display">
@@ -246,10 +294,11 @@
                         <button id="alternative-voicing-btn">Display Alternative Voicing</button>
                     </div>
                 </div>
+                <div id="diatonic-chords-container"></div>
             </div>
         </div>
         <div id="circle-of-fifths-container">
-             <h3>12 EDO Circle of Fifths (any scale)</h3>
+             <h3>12 EDO Circle of Fifths (any scale, diatonic intervals)</h3>
              <svg id="cof-svg" width="300" height="300">
                 <g id="cof-lock-btn">
                     <circle cx="150" cy="150" r="30" fill="#666" stroke="#888" stroke-width="2"></circle>
@@ -317,7 +366,7 @@
         </div>
         <!-- --- END TAB EDITOR SECTION --- -->
 
-        <div class="comments"><h3>How To Use</h3><ul><li><strong>Contextual Info:</strong> Selecting some presets like "Overtone Series Demo" will show a special information panel below.</li><li><strong>Scale Libraries:</strong> Use the "Show Zeitler Scales" button to switch between the basic scale list and a massive library of over 2000 scales.</li><li><strong>Tab Playback:</strong> Press the <strong>Spacebar</strong> to play or pause the tablature sequence.</li><li><strong>Circle of Fifths:</strong> Default scale is major. Click a note to view a chord. Change to any scale and the highlighting and the interval numbers update. Use the central 🔒 to lock the root while exploring the key.</li></ul></div>
+        <div class="comments"><h3>How To Use</h3><ul><li><strong>Contextual Info:</strong> Selecting some presets like "Overtone Series Demo" will show a special information panel below.</li><li><strong>Scale Libraries:</strong> Use the "Show Zeitler Scales" button to switch between the basic scale list and a massive library of over 2000 scales.</li><li><strong>Tab Playback:</strong> Press the <strong>Spacebar</strong> to play or pause the tablature sequence.</li><li><strong>Circle of Fifths:</strong> Default scale is major. Click a note to view a chord. The circle is locked by default (🔒); in this state, clicking a chord will show its voicing without changing the key. If unlocked (🔓), clicking a chord will only change the root note, allowing you to easily transpose the current scale.</li></ul></div>
         <div class="comments"><h3>Physics Formula</h3><p><code>frequency = (1 / (2 * L)) * sqrt(T / μ)</code> where L=Length, T=Tension, μ=Linear Density.</p><p>Linear Density <code>μ = ρ * (π * (width/2)^2)</code> where ρ=Material Density.</p></div>
         <div class="comments"><h3>Interval Calculation Formulas</h3><p><strong>Equal Divisions of the Octave (EDO):</strong> Divides the octave (a 2/1 frequency ratio) into N equal steps. The frequency for any step is calculated as <code>freq = baseFreq * 2^(step / N)</code>. Standard tuning is 12-EDO.</p><p><strong>Just Intonation (JI):</strong> Defines intervals by simple integer ratios, leading to pure-sounding consonances. The frequency for any interval is <code>freq = baseFreq * (p / q)</code>, e.g., a perfect fifth is 3/2.</p></div>
         <div class="comments" id="overtone-comments" style="display: none;">
@@ -352,8 +401,10 @@
         </div>
     </div>
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="voicings.js"></script>
     <script src="voicings-alternative.js"></script>
+    <script src="scales.js"></script>
     <script src="zeitler-scales.js"></script>
     <script src="tab-editor.js"></script>
     <script src="circle-of-fifths.js"></script>
