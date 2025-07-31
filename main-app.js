@@ -21,12 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const CHORD_DEFINITIONS_24 = { 'Neutral (24)': { steps: [7, 7] } };
     const CHORD_DEFINITIONS_31 = { 'Major (31)': { steps: [10, 8] }, 'minor (31)': { steps: [8, 10] }, 'Diminished (31)': { steps: [8, 8] }, 'Neutral (31)': { steps: [9, 9] }, 'Barbershop Seventh (31)': { steps: [10, 8, 7] }, 'I Supermajor Minor Seven (31)': { steps: [11, 7, 7] }, 'Septimal 11th (31)': { steps: [10, 5, 3, 7] }, 'Undecimal 11th (31)': { steps: [10, 4, 4, 7] }, 'Neutral Harmonic Seventh (31)': { steps: [9, 9, 7] }, 'Neutral Minor Seventh (31)': { steps: [9, 9, 8] }, 'Neutral Major Seventh (31)': { steps: [9, 9, 10] } };
     
-    // All scale definitions now use relative steps
-    const SCALE_DEFINITIONS = {'Major (Ionian)':[2,2,1,2,2,2,1], 'Dorian':[2,1,2,2,2,1,2], 'Phrygian':[1,2,2,2,1,2,2], 'Lydian':[2,2,2,1,2,2,1], 'Mixolydian':[2,2,1,2,2,1,2], 'Minor (Aeolian)':[2,1,2,2,1,2,2], 'Locrian':[1,2,2,1,2,2,2], 'Harmonic Minor':[2,1,2,2,1,3,1], 'Locrian #6': [1,2,2,1,3,1,2], 'Phrygian Dominant':[1,3,1,2,1,2,2], 'Melodic Minor':[2,1,2,2,2,2,1], 'Major Pentatonic':[2,2,3,2,3], 'Minor Pentatonic':[3,2,2,3,2], 'Blues':[3,2,1,1,3,2], 'Neapolitan Minor': [1,2,2,2,1,3,1], 'Byzantine': [1,3,1,2,1,3,1]};
-    const SCALE_DEFINITIONS_19 = { 'Supermajor Lydian (19)': [3,4,1,3,3,3,2], 'Subminor Pentatonic (19)': [4,2,5,4,4] };
-    const SCALE_DEFINITIONS_24 = { 'Neutral Ionian (24)': [4,3,3,4,4,3,3], 'Neutral Dorian (24)': [3,3,4,4,3,3,4], 'Neutral Phrygian (24)': [3,4,4,3,3,4,3], 'Neutral Lydian (24)': [4,4,3,3,4,3,3], 'Neutral Mixolydian (24)': [4,3,3,4,3,3,4], 'Neutral Aeolian (24)': [3,3,4,3,3,4,4], 'Neutral Locrian (24)': [3,4,3,3,4,4,3], 'Neutral Whole (24)': [3,4,3,4,3,4,3], 'Maqam Bayati (24)': [3,2,4,4,2,4,4], 'Maqam Rast Asc (24)': [4,3,2,4,4,3,4], 'Maqam Rast Desc (24)': [4,3,2,4,4,4,3], 'Maqam Saba (24)': [3,2,2,6,2,4,4], 'Maqam Sigah (24)': [2,4,4,3,2,4,5], 'Maqam Ajam (24)': [4,4,2,4,4,4,2], 'Maqam Hoseyni (24)': [3,2,4,3,2,4,6], 'Maqam Nahawand (24)': [4,2,4,4,2,4,4], 'Maqam Hijaz (24)': [2,6,2,4,2,4,4], 'Maqam Kurd (24)': [2,4,4,2,4,4,4] };
-    const SCALE_DEFINITIONS_31 = { 'Neutral (31)': [4,4,3,4,4,4,4], 'Gamelan Pelog (31)': [3,4,7,3,4,7,3], 'Gamelan pseudo-Slendro (31)': [6,6,6,6,7], 'Pure Blues (31)': [10,8,7,6], 'Undecimal Blues (31)': [10,4,4,9,4], 'Mothra (Square Wave) (31)': [5,5,4,4,4,3,3,3], 'Supermajor Hexatonic (31)': [5,6,2,5,7,6] };
-
     const INTERVAL_NAMES = {0:'R',1:'b2',2:'2',3:'b3',4:'3',5:'4',6:'b5',7:'5',8:'#5',9:'6',10:'b7',11:'7',12:'R',13:'b9',14:'9',15:'#9',16:'b11',17:'11',18:'#11',19:'b13',20:'6',21:'13'};
     const ROMAN_INTERVAL_NAMES = {0:'I',1:'bII',2:'II',3:'bIII',4:'III',5:'IV',6:'bV',7:'V',8:'#V',9:'VI',10:'bVII',11:'VII'};
     const DIATONIC_DEGREES = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
@@ -55,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- STATE ---
     let state = { 
-        strings: [], frets: 12, notes: [], fretPositions: [], currentChord: null, currentScale: null, tuningPanelVisible: false, noteDisplayMode: 'names', notesPerStringLimit: 'all', showFretNumbers: true, isRootLocked: false, isPlayerView: true, isLeftHanded: false, interactionMode: 'toggle_note', midiAccess: null, midiInputs: [], midiOutputs: [], selectedMidiInId: null, selectedMidiOutId: null, activeMidiNotes: new Map(),
+        strings: [], frets: 12, notes: [], highlightedNotes: [], fretPositions: [], currentChord: null, currentScale: null, tuningPanelVisible: false, noteDisplayMode: 'names', notesPerStringLimit: 'all', showFretNumbers: true, isRootLocked: true, isPlayerView: true, isLeftHanded: false, interactionMode: 'toggle_note', midiAccess: null, midiInputs: [], midiOutputs: [], selectedMidiInId: null, selectedMidiOutId: null, activeMidiNotes: new Map(),
         masterVolume: 0.8,
         temperament: 12,
         currentChordDefs: {},
@@ -63,7 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
         scaleStepsToNameMap: new Map(),
         isZeitlerMode: false,
         instrumentMode: null, overtoneFundamentalHz: null,
-        showingAlternativeVoicing: false
+        showingAlternativeVoicing: false,
+        intervalColors: { 'R': '#FF4136', 'b2': '#FF851B', '2': '#FFDC00', 'b3': '#01FF70', '3': '#2ECC40', '4': '#3D9970', 'b5': '#39CCCC', '5': '#7FDBFF', '#5': '#0074D9', '6': '#B10DC9', 'b7': '#F012BE', '7': '#85144b'}
     };
 
     // --- DOM ELEMENTS ---
@@ -81,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const rootNoteSelect = document.getElementById('root-note-select'), chordTypeSelect = document.getElementById('chord-type-select'), showChordBtn = document.getElementById('show-chord-btn'), clearFretboardBtn = document.getElementById('clear-fretboard-btn');
     const playStrumBtn = document.getElementById('play-strum-btn'), playShredBtn = document.getElementById('play-shred-btn');
     const recognizedChordDisplay = document.getElementById('recognized-chord-display'), recognizedScaleDisplay = document.getElementById('recognized-scale-display');
+    const diatonicChordsContainer = document.getElementById('diatonic-chords-container');
     const currentRootDisplay = document.getElementById('current-root-display'), currentNotesDisplay = document.getElementById('current-notes-display');
     const currentNotesSimpleDisplay = document.getElementById('current-notes-simple-display');
     const currentIntervalsContainer = document.getElementById('current-intervals-container');
@@ -99,6 +95,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const cof31Svg = document.getElementById('cof-31-svg'), cof31LockBtn = document.getElementById('cof-31-lock-btn'), cof31LockIcon = document.getElementById('cof-31-lock-icon');
     const scaleModesContainer = document.getElementById('scale-modes-container'), scaleModesList = document.getElementById('scale-modes-list');
     const alternativeVoicingContainer = document.getElementById('alternative-voicing-container'), alternativeVoicingBtn = document.getElementById('alternative-voicing-btn');
+    const fullscreenBtn = document.getElementById('fullscreen-btn'), screenshotBtn = document.getElementById('screenshot-btn');
+    const intervalColorControls = document.getElementById('interval-color-controls');
     // Tab DOM elements
     const tabGrid = document.getElementById('tab-grid'), tabPlayhead = document.getElementById('tab-playhead'), tempoInput = document.getElementById('tempo-input'), textTabIo = document.getElementById('text-tab-io'), midiFileInput = document.getElementById('midi-file-input');
     const playTabBtn = document.getElementById('play-tab-btn'), stopTabBtn = document.getElementById('stop-tab-btn'), addTabColBtn = document.getElementById('add-tab-col-btn'), removeTabColBtn = document.getElementById('remove-tab-col-btn');
@@ -315,15 +313,36 @@ document.addEventListener('DOMContentLoaded', () => {
         const thickness = getVisualThickness(string.width); stringRow.style.setProperty('--string-thickness', `${thickness.toFixed(2)}px`); const openSpace = document.createElement('div'); openSpace.className = 'fret-space open-string-space'; openSpace.dataset.stringIndex = i; openSpace.dataset.fretIndex = -1; stringRow.appendChild(openSpace); const frettedArea = document.createElement('div'); frettedArea.className = 'fretted-area';
         if (state.fretPositions[i]) { for (let j = 0; j < state.frets; j++) { const fretSpace = document.createElement('div'); fretSpace.className = 'fret-space'; fretSpace.style.width = `${state.fretPositions[i][j + 1] - state.fretPositions[i][j]}%`; fretSpace.dataset.stringIndex = i; fretSpace.dataset.fretIndex = j; frettedArea.appendChild(fretSpace); if (j < state.frets) { const fretDivider = document.createElement('div'); fretDivider.className = 'fret-divider'; fretDivider.style.left = `${state.fretPositions[i][j + 1]}%`; fretDivider.dataset.stringIndex = i; fretDivider.dataset.fretIndex = j + 1; frettedArea.appendChild(fretDivider); } } }
         stringRow.appendChild(frettedArea);
-        state.notes.filter(n => n.string === i && n.fret !== null).forEach(note => {
+        state.notes.forEach(note => {
+            if (note.string !== i || note.fret === null) return;
             const noteEl = document.createElement('div');
             noteEl.className = 'note';
             noteEl.dataset.string = note.string;
             noteEl.dataset.fretIndex = note.fret;
+
+            if (state.highlightedNotes.some(hn => hn.string === note.string && hn.fret === note.fret)) {
+                noteEl.classList.add('highlighted');
+            }
             
             const frettedFreq = calculateFrettedFrequency(note.string, note.fret);
             const edoInfo = frequencyToEdoInfo(frettedFreq);
             let label = '';
+            
+            // --- NEW: Interval Color Logic ---
+            const rootFreq = getRootFrequency();
+            const rootEdoInfo = frequencyToEdoInfo(rootFreq);
+            let intervalColor = '#4a90e2'; // Default color
+
+            if (rootEdoInfo && edoInfo && state.temperament === 12) {
+                const intervalSteps = edoInfo.absoluteStep - rootEdoInfo.absoluteStep;
+                const normalizedInterval = (intervalSteps % 12 + 12) % 12;
+                const intervalName = INTERVAL_NAMES[normalizedInterval];
+                if (state.intervalColors[intervalName]) {
+                    intervalColor = state.intervalColors[intervalName];
+                }
+            }
+            noteEl.style.background = intervalColor;
+            // --- END NEW ---
 
             switch(state.noteDisplayMode) {
                 case 'names':
@@ -334,9 +353,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     break;
                 case 'intervals':
                 case 'intervals_roman':
-                    const rootFreq = getRootFrequency();
-                    const rootEdoInfo = frequencyToEdoInfo(rootFreq);
-
                     if (rootEdoInfo && edoInfo) {
                         const intervalSteps = edoInfo.absoluteStep - rootEdoInfo.absoluteStep;
                         
@@ -369,6 +385,34 @@ document.addEventListener('DOMContentLoaded', () => {
         fretboardContainer.appendChild(stringRow);
     }
     
+    function renderIntervalColorPickers() {
+        intervalColorControls.innerHTML = '';
+        Object.keys(state.intervalColors).forEach(intervalName => {
+            const pickerContainer = document.createElement('div');
+            pickerContainer.className = 'interval-color-picker';
+
+            const label = document.createElement('label');
+            label.textContent = intervalName;
+            label.htmlFor = `color-${intervalName}`;
+
+            const colorInput = document.createElement('input');
+            colorInput.type = 'color';
+            colorInput.id = `color-${intervalName}`;
+            colorInput.value = state.intervalColors[intervalName];
+
+            colorInput.addEventListener('input', (e) => {
+                state.intervalColors[intervalName] = e.target.value;
+                if(state.currentChord || state.currentScale || state.notes.length > 0) {
+                   renderApp(); 
+                }
+            });
+
+            pickerContainer.appendChild(label);
+            pickerContainer.appendChild(colorInput);
+            intervalColorControls.appendChild(pickerContainer);
+        });
+    }
+
     // --- EVENT LISTENERS & HANDLERS ---
     function attachEventListeners() { 
         document.body.addEventListener('click', handleDelegatedClick); 
@@ -395,6 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 CircleOfFifths.updateCircleOfFifths19(null);
                 CircleOfFifths.updateCircleOfFifths31(null);
                 updateScaleModesDisplay();
+                updateDiatonicChordsDisplay();
                 alternativeVoicingContainer.style.display = 'none';
             }
 
@@ -412,6 +457,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     AudioMidi.AudioPlayer.playNote(calculateFrettedFrequency(stringIndex, fretIndex), 0);
                     break;
             }
+            return;
+        }
+
+        const chordBtn = e.target.closest('.diatonic-chord-btn');
+        if (chordBtn) {
+            handleDiatonicChordClick(chordBtn);
             return;
         }
         
@@ -522,6 +573,7 @@ document.addEventListener('DOMContentLoaded', () => {
             CircleOfFifths.updateCircleOfFifths31(null);
         }
         updateScaleModesDisplay();
+        updateDiatonicChordsDisplay();
         renderApp();
     }
     function handleShowAlternativeVoicing() {
@@ -603,6 +655,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Hide alt voicing button when showing a scale
         alternativeVoicingContainer.style.display = 'none';
         state.showingAlternativeVoicing = false;
+        
+        state.highlightedNotes = []; // Clear any previously highlighted chord
 
         const rootNoteName = rootNoteSelect.options[rootNoteSelect.selectedIndex].text;
         let noteNames;
@@ -650,6 +704,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         updateScaleModesDisplay(scaleType, getRootFrequency());
+        updateDiatonicChordsDisplay(scaleType, rootStep);
     }
     function handleRandomScale() { 
         const options = Array.from(scaleTypeSelect.options);
@@ -661,10 +716,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleShowAllNotes() { clearTheory(); let allNotes = []; for (let i = 0; i < state.strings.length; i++) { for (let j = -1; j < state.frets; j++) { allNotes.push({string: i, fret: j}); } } state.notes = allNotes; renderApp(); }
     function clearTheory(clearDisplays = true) {
         state.notes = [];
+        state.highlightedNotes = [];
         state.currentChord = null;
         state.currentScale = null;
         alternativeVoicingContainer.style.display = 'none';
         state.showingAlternativeVoicing = false;
+        diatonicChordsContainer.innerHTML = '';
         if (clearDisplays) {
             CircleOfFifths.updateCircleOfFifths(null);
             CircleOfFifths.updateCircleOfFifths19(null);
@@ -763,8 +820,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function handlePlayStrum() {
         if (state.notes.length === 0) return;
+        const notesToPlay = state.highlightedNotes.length > 0 ? state.highlightedNotes : state.notes;
         const notesByString = new Map();
-        state.notes.forEach(note => {
+        notesToPlay.forEach(note => {
             if (!notesByString.has(note.string) || note.fret > notesByString.get(note.string).fret) {
                 notesByString.set(note.string, note);
             }
@@ -774,11 +832,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function handlePlayShred() {
         if (state.notes.length === 0) return;
-        const shredNotes = [...state.notes].sort((a, b) => {
+        const notesToPlay = state.highlightedNotes.length > 0 ? state.highlightedNotes : state.notes;
+        const shredNotes = [...notesToPlay].sort((a, b) => {
             if (a.string !== b.string) return a.string - b.string;
             return a.fret - b.fret;
         });
         playNoteSequenceWithAnimation(shredNotes, 80);
+    }
+    
+    function handleFullScreenToggle() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+            });
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    }
+    
+    function handleScreenshot() {
+        const appElement = document.getElementById('app');
+        html2canvas(appElement, { 
+            backgroundColor: '#333',
+            useCORS: true 
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = 'fretboard-screenshot.jpg';
+            link.href = canvas.toDataURL('image/jpeg', 0.9);
+            link.click();
+        });
     }
 
     // --- STATE MODIFICATION ---
@@ -828,7 +912,81 @@ document.addEventListener('DOMContentLoaded', () => {
     function removeString(indexToRemove) { if (state.strings.length <= MIN_STRINGS) return; TabEditor.stop(); clearTheory(); state.strings.splice(indexToRemove, 1); state.fretPositions.splice(indexToRemove, 1); state.notes = state.notes.filter(n => n.string !== indexToRemove).map(n => { if (n.string > indexToRemove) n.string--; return n; }); state.instrumentMode = null; TabEditor.init(); renderApp(); }
     function changeFrets(amount) { const newCount = state.frets + amount; if (newCount >= MIN_FRETS && newCount <= MAX_FRETS) { clearTheory(); state.frets = newCount; generateInitialFretPositions(state.temperament); renderApp(); } }
     
-    // --- THEORY DISPLAY (MODES/PIE) ---
+    // --- THEORY DISPLAY (MODES/CHORDS) ---
+    function handleDiatonicChordClick(button) {
+        const chordIntervalsStr = button.dataset.intervals.split(',').map(Number);
+        const rootNoteIndex = parseInt(button.dataset.root, 10);
+        
+        const chordNoteIndexes = new Set(chordIntervalsStr.map(i => (rootNoteIndex + i) % 12));
+
+        state.highlightedNotes = state.notes.filter(note => {
+            const freq = calculateFrettedFrequency(note.string, note.fret);
+            const midi = frequencyToMidi(freq);
+            return chordNoteIndexes.has(midi % 12);
+        });
+
+        if (state.interactionMode === 'play') {
+            const notesToPlay = state.highlightedNotes.filter(note => note.fret !== null);
+            const notesByString = new Map();
+            notesToPlay.forEach(note => {
+                if (!notesByString.has(note.string) || note.fret < notesByString.get(note.string).fret) {
+                    notesByString.set(note.string, note);
+                }
+            });
+            playNoteSequenceWithAnimation(Array.from(notesByString.values()), 50);
+        }
+
+        renderApp();
+    }
+
+    function updateDiatonicChordsDisplay(scaleName, rootNoteIndex) {
+        diatonicChordsContainer.innerHTML = '';
+        if (!scaleName || rootNoteIndex === undefined || state.temperament !== 12) {
+            return;
+        }
+
+        const scaleIntervals = state.currentScaleDefs[scaleName];
+        if (!scaleIntervals) return;
+
+        const scalePitchClasses = new Set(scaleIntervals.map(i => (rootNoteIndex + i) % 12));
+
+        scaleIntervals.forEach((scaleDegreeInterval, degreeIndex) => {
+            const chordRootIndex = (rootNoteIndex + scaleDegreeInterval) % 12;
+            
+            const minorThirdIndex = (chordRootIndex + 3) % 12;
+            const majorThirdIndex = (chordRootIndex + 4) % 12;
+            const diminishedFifthIndex = (chordRootIndex + 6) % 12;
+            const perfectFifthIndex = (chordRootIndex + 7) % 12;
+            
+            let chordType = null;
+            let chordIntervals = null;
+            let romanNumeral = DIATONIC_DEGREES[degreeIndex] || (degreeIndex + 1).toString();
+
+            if (scalePitchClasses.has(majorThirdIndex) && scalePitchClasses.has(perfectFifthIndex)) {
+                chordType = 'Major';
+                chordIntervals = [0, 4, 7];
+            } else if (scalePitchClasses.has(minorThirdIndex) && scalePitchClasses.has(perfectFifthIndex)) {
+                chordType = 'Minor';
+                chordIntervals = [0, 3, 7];
+                romanNumeral = romanNumeral.toLowerCase();
+            } else if (scalePitchClasses.has(minorThirdIndex) && scalePitchClasses.has(diminishedFifthIndex)) {
+                chordType = 'Diminished';
+                chordIntervals = [0, 3, 6];
+                romanNumeral = romanNumeral.toLowerCase() + '°';
+            }
+
+            if (chordType) {
+                const chordRootName = NOTE_NAMES[chordRootIndex];
+                const btn = document.createElement('button');
+                btn.className = 'diatonic-chord-btn';
+                btn.textContent = `${romanNumeral}: ${chordRootName} ${chordType}`;
+                btn.dataset.root = chordRootIndex;
+                btn.dataset.intervals = chordIntervals.join(',');
+                diatonicChordsContainer.appendChild(btn);
+            }
+        });
+    }
+
     function createModePieChart(steps) {
         const size = 40, radius = size / 2;
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -1079,6 +1237,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     scaleSearchInput.addEventListener('input', updateScaleDropdown);
     alternativeVoicingBtn.addEventListener('click', handleShowAlternativeVoicing);
+    fullscreenBtn.addEventListener('click', handleFullScreenToggle);
+    screenshotBtn.addEventListener('click', handleScreenshot);
     
     // --- INITIALIZATION ---
     JSON.parse(ZEITLER_SCALES_RAW).forEach(scale => {
@@ -1117,6 +1277,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setTuning(6, 12, GUITAR_TUNING_HZ, GUITAR_GAUGES, 12); 
     updateTheoryDefinitions();
+    renderIntervalColorPickers();
 
     TabEditor.setup({
         state: state,
@@ -1157,9 +1318,18 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.collapsible-header').forEach(header => {
         const content = header.nextElementSibling;
         if (content && content.classList.contains('collapsible-content')) {
-            // Hide by default
-            content.style.display = 'none';
-            header.classList.remove('active');
+            // If header has 'active' class, show content by default
+            if(header.classList.contains('active')) {
+                // Restore original display type based on element
+                if(content.parentElement.classList.contains('control-section')) {
+                    content.style.display = 'flex';
+                } else {
+                    content.style.display = 'block';
+                }
+            } else {
+                 content.style.display = 'none';
+            }
+
 
             header.addEventListener('click', () => {
                 header.classList.toggle('active');
