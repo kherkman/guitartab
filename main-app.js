@@ -1242,7 +1242,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- INITIALIZATION ---
     JSON.parse(ZEITLER_SCALES_RAW).forEach(scale => {
-        ZEITLER_SCALE_DEFINITIONS[scale.name] = scale.steps;
+        ZEITLER_SCALE_DEFINITIONS[scale.name] = scale.steps.split('').map(Number);
     });
     
     const all12EDOScaleSteps = { ...SCALE_DEFINITIONS, ...ZEITLER_SCALE_DEFINITIONS };
