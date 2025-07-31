@@ -14,7 +14,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const KANTELE_5_MAJOR_HZ = [196.00, 220.00, 246.94, 261.63, 293.66], KANTELE_5_GAUGES = [0.018, 0.016, 0.014, 0.013, 0.011];
     const KANTELE_5_MINOR_HZ = [220.00, 246.94, 261.63, 293.66, 329.63], KANTELE_5_MINOR_GAUGES = KANTELE_5_GAUGES;
     const KANTELE_11_HZ = [196.00, 220.00, 246.94, 261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25], KANTELE_11_GAUGES = [0.022, 0.020, 0.018, 0.016, 0.014, 0.012, 0.011, 0.010, 0.009, 0.008, 0.007];
-    const JUST_INTONATION_RATIOS = [1/1, 16/15, 9/8, 6/5, 5/4, 4/3, 45/32, 3/2, 8/5, 5/3, 9/5, 15/8];
+    const JUST_INTONATION_TUNING_HZ = [82.5, 110.0, 146.67, 195.56, 244.44, 325.93]; // Based on pure ratios from A2=110Hz
+    const SAZ_TUNING_HZ = [98.00, 146.83, 220.00]; // G2-D3-A3 Common Saz Tuning
+    const SAZ_GAUGES = [0.025, 0.018, 0.012];
+    const SAZ_FRET_RATIOS = [1.0558, 1.1058, 1.1272, 1.1804, 1.2238, 1.2681, 1.3257, 1.3944, 1.4493, 1.4799, 1.5555, 1.6204, 1.6949, 1.7677, 1.8470, 1.9231, 2.0, 2.0771, 2.2082, 2.3026, 2.4390, 2.5362, 2.6820]; // Ratios for 23 frets
+    const SAZ_FRET_DEFINITIONS = [
+        { name: "Pest Segâh", interval: "Komali 2'li" }, { name: "Pest Kürdi", interval: "Bakiye" }, { name: "Çargah", interval: "Küçük Mücennep" }, { name: "Neva", interval: "Büyük Mücennep" }, { name: "Hüseyni", interval: "Tanini" }, { name: "Acem", interval: "Artık 2'li" }, { name: "Eviç", interval: "Tam 4'lü" }, { name: "Mahur", interval: "Artık 4'lü" }, { name: "Gerdaniye", interval: "Eksik 5'li" }, { name: "Muhayyer", interval: "Tam 5'li" }, { name: "Sünbüle", interval: "Komali 6'lı" }, { name: "Zirgüle", interval: "Bakiye 6'lı" }, { name: "Şehnaz", interval: "K. Mücennep 6'lı" }, { name: "Saba", interval: "Eksik 7'li" }, { name: "Buselik", interval: "Küçük 7'li" }, { name: "Hicaz", interval: "Büyük 7'li" }, { name: "Nym Hicaz", interval: "Oktav" }, { name: "Tiz Neva", interval: "Oktav + B.Mücennep" }, { name: "Tiz Hüseyni", interval: "Oktav + Tanini" }, { name: "Tiz Acem", interval: "Oktav + Artık 2'li" }, { name: "Tiz Eviç", interval: "Oktav + Tam 4'lü" }, { name: "Tiz Gerdaniye", interval: "Oktav + Eksik 5'li" }, { name: "Tiz Muhayyer", interval: "Oktav + Tam 5'li" }
+    ];
+    const JUST_INTONATION_RATIOS = [16/15, 9/8, 6/5, 5/4, 4/3, 45/32, 3/2, 8/5, 5/3, 9/5, 15/8];
     const TRUE_TEMPERAMENT_OFFSETS_CENTS = [ [0, -2, 0, -1, 0, -2, -4, 0, -2, 0, -1, 0], [0, -2, 0, -1, 0, -2, -4, 0, -2, 0, -1, 0], [0, -2, 0, -1, 0, -2, -4, 0, -2, 0, -1, 0], [0, +12, +14, +12, +14, +12, +10, +14, +16, +14, +12, +14], [0, -2, 0, -1, 0, -2, -4, 0, -2, 0, -1, 0], [0, -2, 0, -1, 0, -2, -4, 0, -2, 0, -1, 0] ];
     const CHORD_DEFINITIONS = { 'Major': {steps:[4,3]},'Minor': {steps:[3,4]},'Diminished': {steps:[3,3]},'Augmented': {steps:[4,4]},'Dominant 7th': {steps:[4,3,3]},'Major 7th': {steps:[4,3,4]},'Minor 7th': {steps:[3,4,3]},'Major 6th': {steps:[4,3,2]},'Minor 6th': {steps:[3,4,2]}, 'Suspended 2nd': {steps:[2,5]},'Suspended 4th': {steps:[5,2]},'Major 9th': {steps:[4,3,4,3]},'Dominant 9th': {steps:[4,3,3,4]},'Minor 9th': {steps:[3,4,3,4]},'11th':{steps:[4,3,3,7]},'Dominant 13th':{steps:[4,3,3,4,7]},'Major 13th':{steps:[4,3,4,3,7]},'Minor 13th':{steps:[3,4,3,4,7]} };
     const CHORD_DEFINITIONS_19 = { 'Major (19)': { steps: [6, 5] }, 'Minor (19)': { steps: [5, 6] }, 'Diminished (19)': { steps: [5, 5] }, 'Subminor (19)': { steps: [4, 7] }, 'Supermajor (19)': { steps: [7, 4] }, 'Diminished Seventh (19)': { steps: [5, 5, 5] } };
@@ -103,7 +110,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const importTextTabBtn = document.getElementById('import-text-tab-btn'), exportTextTabBtn = document.getElementById('export-text-tab-btn'), exportMidiBtn = document.getElementById('export-midi-btn');
 
     // --- HELPER, PHYSICS & CHORD/SCALE FUNCTIONS ---
-    function getRootFrequency(octave = 3) { if (!rootNoteSelect.value) return 0; const C0_HZ = 16.351597831287414; const rootStepInOctave = parseInt(rootNoteSelect.value, 10); const edo = state.temperament || 12; const absoluteStep = octave * edo + rootStepInOctave; return C0_HZ * Math.pow(2, absoluteStep / edo); }
+    function getRootFrequency(octave = 3) {
+        if (!rootNoteSelect.value) return 0;
+        const C0_HZ = 16.351597831287414;
+        const rootStepInOctave = parseInt(rootNoteSelect.value, 10);
+        // Treat string-based temperaments as 12 for root frequency calculation
+        const edo = (typeof state.temperament === 'number') ? state.temperament : 12; 
+        const absoluteStep = octave * edo + rootStepInOctave;
+        return C0_HZ * Math.pow(2, absoluteStep / edo);
+    }
     function stepsToIntervals(steps) { const intervals = [0]; let currentSemitone = 0; for (let i = 0; i < steps.length - 1; i++) { currentSemitone += parseInt(steps[i], 10); intervals.push(currentSemitone); } return intervals; }
     function chordStepsToAbsoluteIntervals(steps) { if (!steps) return [0]; const intervals = [0]; let currentSemitone = 0; for (const step of steps) { currentSemitone += parseInt(step, 10); intervals.push(currentSemitone); } return intervals; }
     function getVisualThickness(gauge) { const minGauge = 0.007, maxGauge = 0.110, minPx = 1.0, maxPx = 7.0; const clampedGauge = Math.max(minGauge, Math.min(gauge, maxGauge)); const gaugeRange = maxGauge - minGauge, pxRange = maxPx - minPx; return minPx + ((clampedGauge - minGauge) / gaugeRange) * pxRange; }
@@ -117,18 +132,21 @@ document.addEventListener('DOMContentLoaded', () => {
     function frequencyToEdoInfo(frequency) {
         if (!frequency || frequency <= 0) return null;
 
-        const edo = state.temperament || 12;
+        const edo = state.temperament;
         
-        if (edo === 12) {
+        // Use standard 12-TET naming/calculation for Just Intonation and True Temperament
+        if (edo === 12 || edo === 'just' || edo === 'true_temperament') {
             const midi = frequencyToMidi(frequency);
             return {
                 midi: midi,
-                absoluteStep: midi,
+                absoluteStep: midi, // Use MIDI as the absolute step for 12-tone-based systems
                 octave: Math.floor(midi / 12) - 1,
                 stepInOctave: midi % 12,
                 noteName: NOTE_NAMES[midi % 12]
             };
         }
+
+        // Handle numeric EDOs
         const C0_HZ = 16.351597831287414;
         const absoluteStep = Math.round(edo * Math.log2(frequency / C0_HZ));
         const octave = Math.floor(absoluteStep / edo);
@@ -143,15 +161,69 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < state.strings.length; i++) {
             const stringFrets = [0];
             if (temperament === 'just') {
+                const A4_HZ = 440.0;
+                // Ratios for a 5-limit just intonation chromatic scale, based on C
+                const JI_CHROMATIC_RATIOS_FROM_C = [1, 16/15, 9/8, 6/5, 5/4, 4/3, 45/32, 3/2, 8/5, 5/3, 16/9, 15/8];
+                // In JI, A is a major 6th (ratio 5/3) above C. So C4's freq is A4 / (5/3)
+                const C4_JI_HZ = A4_HZ / (5/3); 
+                
+                // Get the open string's approximate MIDI note to determine the sequence of notes up the fretboard
+                const openStringMidi = frequencyToMidi(calculateFrequency({ ...state.strings[i] }));
+
                 for (let j = 0; j < state.frets; j++) {
-                    const ratio = JUST_INTONATION_RATIOS[j % 12] * Math.pow(2, Math.floor(j / 12));
-                    stringFrets.push((1 - (1 / ratio)) * 100);
+                    const targetMidi = openStringMidi + j + 1;
+                    
+                    // Determine the octave and note index (0-11 for C-B) for the target note
+                    const targetOctave = Math.floor(targetMidi / 12) - 1;
+                    const noteIndexInChromaticScale = targetMidi % 12;
+
+                    // Calculate the frequency of C in the target note's octave
+                    const c_hz_in_target_octave = C4_JI_HZ * Math.pow(2, targetOctave - 4);
+                    
+                    // Get the JI ratio for the target note relative to C
+                    const ratioFromC = JI_CHROMATIC_RATIOS_FROM_C[noteIndexInChromaticScale];
+                    
+                    // Calculate the final, precise JI frequency for the target note
+                    const targetFreq = c_hz_in_target_octave * ratioFromC;
+
+                    // Now, use the physics engine to work backwards and find the required length for that frequency
+                    const frettedLength = calculateLength(state.strings[i].tension, state.strings[i].width, targetFreq);
+                    const lengthRatio = frettedLength / state.strings[i].length;
+                    
+                    // The fret position is where the string length is shortened to the calculated `frettedLength`
+                    const fretPositionPercent = (1 - lengthRatio) * 100;
+
+                    // Add the calculated fret position if it's valid
+                    if (fretPositionPercent > (stringFrets[stringFrets.length - 1] || 0) && fretPositionPercent < 100) {
+                        stringFrets.push(fretPositionPercent);
+                    } else {
+                        // Push a fallback value if the note is unproducible to prevent breaking the layout.
+                        const prevFret = stringFrets[stringFrets.length-1] || 0;
+                        const fallbackStep = 100 / (state.frets + 5);
+                        stringFrets.push(prevFret + fallbackStep);
+                    }
+                }
+            } else if (temperament === 'saz') {
+                for (let j = 0; j < state.frets; j++) {
+                    const ratio = SAZ_FRET_RATIOS[j];
+                    if (!ratio) continue;
+                    const fretPositionPercent = (1 - (1 / ratio)) * 100;
+                     if (fretPositionPercent > (stringFrets[stringFrets.length - 1] || 0) && fretPositionPercent < 100) {
+                        stringFrets.push(fretPositionPercent);
+                    }
                 }
             } else if (temperament === 'true_temperament' && i < TRUE_TEMPERAMENT_OFFSETS_CENTS.length) {
                 const twelfthRootOfTwo = Math.pow(2, 1/12);
+                const openStringMidi = frequencyToMidi(calculateFrequency(state.strings[i]));
                 for (let j = 0; j < state.frets; j++) {
                     const et_ratio = Math.pow(twelfthRootOfTwo, j + 1);
-                    const cents_offset = (TRUE_TEMPERAMENT_OFFSETS_CENTS[i][j % 12] || 0);
+                    // Determine the absolute MIDI note of the fretted position
+                    const frettedNoteMidi = openStringMidi + j + 1;
+                    // Find which note of the chromatic scale it is (0=C, 1=C#, etc.)
+                    const noteIndexInChromaticScale = frettedNoteMidi % 12;
+                    // Look up the cent offset for that specific note on this specific string
+                    const cents_offset = (TRUE_TEMPERAMENT_OFFSETS_CENTS[i][noteIndexInChromaticScale] || 0);
+                    // Apply the offset to the equal temperament ratio
                     const final_ratio = et_ratio * Math.pow(2, cents_offset / 1200);
                     stringFrets.push((1 - (1 / final_ratio)) * 100);
                 }
@@ -226,15 +298,17 @@ document.addEventListener('DOMContentLoaded', () => {
         comments31Edo.style.display = (state.temperament === 31) ? 'block' : 'none';
 
         const isManualMode = !state.currentChord && !state.currentScale;
-        const recognizedChord = (isManualMode && state.temperament === 12) ? recognizeChord(state.notes) : null;
-        const recognizedScale = (isManualMode && !recognizedChord && state.temperament === 12) ? recognizeScale(state.notes) : null;
+        const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament');
+        const recognizedChord = (isManualMode && is12ToneBased) ? recognizeChord(state.notes) : null;
+        const recognizedScale = (isManualMode && !recognizedChord && is12ToneBased) ? recognizeScale(state.notes) : null;
+
 
         recognizedChordDisplay.textContent = '';
         recognizedChordDisplay.classList.remove('clickable');
         recognizedChordDisplay.removeAttribute('data-root-index');
         recognizedChordDisplay.removeAttribute('data-type');
         
-        if (state.temperament !== 12) {
+        if (!is12ToneBased) {
             recognizedChordDisplay.textContent = 'Recognition disabled for non-12-EDO tunings.';
             recognizedScaleDisplay.textContent = '';
         } else if (recognizedChord) {
@@ -270,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         currentNotesSimpleDisplay.textContent = simpleNotesText;
 
-        cofSvg.parentElement.style.display = state.temperament === 12 ? 'flex' : 'none';
+        cofSvg.parentElement.style.display = is12ToneBased ? 'flex' : 'none';
         cof19Container.style.display = state.temperament === 19 ? 'flex' : 'none';
         cof31Container.style.display = state.temperament === 31 ? 'flex' : 'none';
         scaleModesContainer.style.display = state.currentScale ? 'flex' : 'none';
@@ -328,12 +402,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const edoInfo = frequencyToEdoInfo(frettedFreq);
             let label = '';
             
-            // --- NEW: Interval Color Logic ---
+            // --- Interval Color Logic ---
             const rootFreq = getRootFrequency();
             const rootEdoInfo = frequencyToEdoInfo(rootFreq);
             let intervalColor = '#4a90e2'; // Default color
+            const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament');
 
-            if (rootEdoInfo && edoInfo && state.temperament === 12) {
+            if (rootEdoInfo && edoInfo && is12ToneBased) {
                 const intervalSteps = edoInfo.absoluteStep - rootEdoInfo.absoluteStep;
                 const normalizedInterval = (intervalSteps % 12 + 12) % 12;
                 const intervalName = INTERVAL_NAMES[normalizedInterval];
@@ -342,38 +417,65 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             noteEl.style.background = intervalColor;
-            // --- END NEW ---
+            // --- END ---
 
             switch(state.noteDisplayMode) {
                 case 'names':
-                    label = `${edoInfo.noteName}${edoInfo.octave}`;
+                    if (state.temperament === 'saz') {
+                        const sazOpenStringNames = ['G2', 'D3', 'A3'];
+                        if (note.fret === -1) {
+                            label = sazOpenStringNames[note.string];
+                        } else if (SAZ_FRET_DEFINITIONS[note.fret]) {
+                            label = SAZ_FRET_DEFINITIONS[note.fret].name;
+                        }
+                    } else {
+                        label = `${edoInfo.noteName}${edoInfo.octave}`;
+                    }
                     break;
                 case 'frequencies':
                     label = `${frettedFreq.toFixed(0)}Hz`;
                     break;
                 case 'intervals':
                 case 'intervals_roman':
-                    if (rootEdoInfo && edoInfo) {
-                        const intervalSteps = edoInfo.absoluteStep - rootEdoInfo.absoluteStep;
-                        
-                        if (state.temperament === 12) {
-                            if (state.noteDisplayMode === 'intervals_roman') {
-                                const normalizedInterval = (intervalSteps % 12 + 12) % 12;
-                                label = ROMAN_INTERVAL_NAMES[normalizedInterval] || '?';
-                            } else {
-                                label = note.interval || INTERVAL_NAMES[intervalSteps] || INTERVAL_NAMES[(intervalSteps % 12 + 12) % 12] || '?';
+                    if (state.temperament === 'saz') {
+                        if (note.fret > -1 && SAZ_FRET_DEFINITIONS[note.fret]) {
+                            label = SAZ_FRET_DEFINITIONS[note.fret].interval;
+                        } else if (note.fret === -1) {
+                            label = 'Rast'; // Root
+                        }
+                    } else { 
+                        if (rootEdoInfo && edoInfo) {
+                            const intervalSteps = edoInfo.absoluteStep - rootEdoInfo.absoluteStep;
+                             if (is12ToneBased) {
+                                if (state.noteDisplayMode === 'intervals_roman') {
+                                    const normalizedInterval = (intervalSteps % 12 + 12) % 12;
+                                    label = ROMAN_INTERVAL_NAMES[normalizedInterval] || '?';
+                                } else {
+                                    label = note.interval || INTERVAL_NAMES[intervalSteps] || INTERVAL_NAMES[(intervalSteps % 12 + 12) % 12] || '?';
+                                }
+                            } else { // Handle numeric EDOs
+                                const edoData = EDO_SYSTEMS[state.temperament] || {};
+                                const normalizedInterval = (intervalSteps % state.temperament + state.temperament) % state.temperament;
+                                label = (edoData.intervals && edoData.intervals[normalizedInterval]) ? edoData.intervals[normalizedInterval] : `${intervalSteps}`;
                             }
                         } else {
-                            const edoData = EDO_SYSTEMS[state.temperament] || {};
-                            const normalizedInterval = (intervalSteps % state.temperament + state.temperament) % state.temperament;
-                            label = (edoData.intervals && edoData.intervals[normalizedInterval]) ? edoData.intervals[normalizedInterval] : `${intervalSteps}`;
+                            label = '?';
                         }
-                    } else {
-                        label = '?';
                     }
                     break;
                 case 'fingerings': noteEl.textContent = note.finger ? note.finger : (note.fret === -1 ? 'O' : (note.fret + 1)); break;
-                case 'cents': let rootInOctaveMidi = Math.floor(frequencyToMidi(frettedFreq) / 12) * 12 + parseInt(rootNoteSelect.value); if (rootInOctaveMidi > frequencyToMidi(frettedFreq)) rootInOctaveMidi -= 12; const rootInOctaveFreq = 440 * Math.pow(2, (rootInOctaveMidi - 69) / 12); const cents = 1200 * Math.log2(frettedFreq / rootInOctaveFreq); noteEl.textContent = `${cents.toFixed(0)}¢`; break;
+                case 'cents':
+                    let centsValue;
+                    if (state.temperament === 'saz') {
+                        centsValue = 1200 * Math.log2(frettedFreq / 110.0);
+                    } else {
+                        let rootInOctaveMidi = Math.floor(frequencyToMidi(frettedFreq) / 12) * 12 + parseInt(rootNoteSelect.value);
+                        if (rootInOctaveMidi > frequencyToMidi(frettedFreq)) rootInOctaveMidi -= 12;
+                        const rootInOctaveFreq = 440 * Math.pow(2, (rootInOctaveMidi - 69) / 12);
+                        centsValue = 1200 * Math.log2(frettedFreq / rootInOctaveFreq);
+                    }
+                    noteEl.textContent = `${centsValue.toFixed(0)}¢`;
+                    break;
             }
             if (label) {
                 noteEl.textContent = label;
@@ -533,7 +635,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const baseIntervals = chordStepsToAbsoluteIntervals(chordDef.steps);
         
         let voicing;
-        if (state.temperament === 12) {
+        if (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament') {
             voicing = findChordVoicing(rootStep, chordType, false);
         } else {
             const rootFrequency = getRootFrequency();
@@ -547,7 +649,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const rootNoteName = rootNoteSelect.options[rootNoteSelect.selectedIndex].text;
         let noteNames;
-        if (state.temperament === 12) {
+        const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament');
+        if (is12ToneBased) {
             noteNames = baseIntervals.map(i => NOTE_NAMES[(rootStep + i) % 12]).join(' · ');
         } else {
             const edoData = EDO_SYSTEMS[state.temperament] || { names: [] };
@@ -555,21 +658,21 @@ document.addEventListener('DOMContentLoaded', () => {
             noteNames = edoIntervals.map(i => edoData.names[(rootStep + i) % state.temperament] || '?').join(' · ');
         }
         currentRootDisplay.textContent = `Root: ${rootNoteName}`;
-        currentNotesDisplay.textContent = `${chordType} (${state.temperament}-EDO): ${noteNames}`;
+        currentNotesDisplay.textContent = `${chordType} (${typeof state.temperament === 'string' ? state.temperament : state.temperament + '-EDO'}): ${noteNames}`;
         currentIntervalsContainer.style.display = 'none';
 
         // Check for and show the alternative voicing button
         const rootNoteNameForAlt = NOTE_NAMES[rootStep];
-        if (state.temperament === 12 && ALTERNATIVE_VOICING_LIBRARY[rootNoteNameForAlt] && ALTERNATIVE_VOICING_LIBRARY[rootNoteNameForAlt][chordType]) {
+        if (is12ToneBased && ALTERNATIVE_VOICING_LIBRARY[rootNoteNameForAlt] && ALTERNATIVE_VOICING_LIBRARY[rootNoteNameForAlt][chordType]) {
             alternativeVoicingContainer.style.display = 'block';
             alternativeVoicingBtn.textContent = 'Display Alternative Voicing';
         }
 
-        if (state.temperament === 12) {
+        if (is12ToneBased) {
             CircleOfFifths.updateCircleOfFifths(rootStep, 'Major (Ionian)');
         } else {
-            CircleOfFifths.updateCircleOfFifths(null); // Clear the 12-EDO one
-            CircleOfFifths.updateCircleOfFifths19(null); // Clear the 19-EDO one
+            CircleOfFifths.updateCircleOfFifths(null); 
+            CircleOfFifths.updateCircleOfFifths19(null);
             CircleOfFifths.updateCircleOfFifths31(null);
         }
         updateScaleModesDisplay();
@@ -598,8 +701,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const rootEdoInfo = frequencyToEdoInfo(rootFrequency);
         if (!rootEdoInfo) { state.notes = []; renderApp(); return; } // Guard
+
+        const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament');
+        const edo = is12ToneBased ? 12 : state.temperament;
+
         const rootStepInOctave = rootEdoInfo.stepInOctave;
-        const scaleStepsInOctave = new Set(edoIntervals.map(i => (rootStepInOctave + i) % state.temperament));
+        const scaleStepsInOctave = new Set(edoIntervals.map(i => (rootStepInOctave + i) % edo));
 
         let allPossibleScaleNotes = [];
         for (let i = 0; i < state.strings.length; i++) {
@@ -660,7 +767,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const rootNoteName = rootNoteSelect.options[rootNoteSelect.selectedIndex].text;
         let noteNames;
-        if (state.temperament === 12) {
+        const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament');
+
+        if (is12ToneBased) {
             noteNames = edoIntervals.map(i => NOTE_NAMES[(rootStep + i) % 12]).join(' · ');
         } else {
             const edoData = EDO_SYSTEMS[state.temperament] || { names: [] };
@@ -668,11 +777,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         currentRootDisplay.textContent = `Root: ${rootNoteName}`;
-        currentNotesDisplay.textContent = `Scale (${scaleType} in ${state.temperament}-EDO): ${noteNames}`;
+        currentNotesDisplay.textContent = `Scale (${scaleType} in ${typeof state.temperament === 'string' ? state.temperament : state.temperament + '-EDO'}): ${noteNames}`;
 
         // --- NEW LOGIC for INTERVAL DISPLAY ---
         let intervalNames;
-        if (state.temperament === 12) {
+        if (is12ToneBased) {
             intervalNames = edoIntervals.map(i => INTERVAL_NAMES[i] || '?');
         } else if (EDO_SYSTEMS[state.temperament]) {
             const edoData = EDO_SYSTEMS[state.temperament];
@@ -695,7 +804,7 @@ document.addEventListener('DOMContentLoaded', () => {
         CircleOfFifths.updateCircleOfFifths31(null);
 
         // Then, update the correct one based on the current temperament
-        if (state.temperament === 12) {
+        if (is12ToneBased) {
             CircleOfFifths.updateCircleOfFifths(rootStep, scaleType);
         } else if (state.temperament === 19) {
             CircleOfFifths.updateCircleOfFifths19(rootStep, scaleType);
@@ -750,8 +859,12 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'dadgad': setTuning(6, 12, DADGAD_TUNING_HZ, DADGAD_GAUGES, 12); break;
             case '7_string': setTuning(7, 24, SEVEN_STRING_TUNING_HZ, SEVEN_STRING_GAUGES, 12); break;
             case '8_string': setTuning(8, 24, EIGHT_STRING_TUNING_HZ, EIGHT_STRING_GAUGES, 12); break;
-            case 'just_intonation': setTuning(6, 12, GUITAR_TUNING_HZ, GUITAR_GAUGES, 'just'); break;
+            case 'just_intonation': 
+                setTuning(6, 12, JUST_INTONATION_TUNING_HZ, GUITAR_GAUGES, 'just'); 
+                rootNoteSelect.value = 9; // Set root note to A (index 9)
+                break;
             case 'true_temperament': setTuning(6, 12, GUITAR_TUNING_HZ, GUITAR_GAUGES, 'true_temperament'); break;
+            case 'saz': setTuning(3, 23, SAZ_TUNING_HZ, SAZ_GAUGES, 'saz'); break;
             case '19_edo': setTuning(6, 19, GUITAR_TUNING_HZ, GUITAR_GAUGES, 19); break;
             case '24_edo': setTuning(6, 24, GUITAR_TUNING_HZ, GUITAR_GAUGES, 24); break;
             case '31_edo': setTuning(6, 31, GUITAR_TUNING_HZ, GUITAR_GAUGES, 31); break;
@@ -768,7 +881,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function setTuning(numStrings, numFrets, tuningHz, gauges, temperamentSystem = 12) { 
         state.frets = numFrets; 
         state.strings = Array.from({ length: numStrings }, (_, i) => createStringWithTuning(tuningHz[i], gauges[i]));
-        state.temperament = (typeof temperamentSystem === 'number') ? temperamentSystem : 12;
+        state.temperament = temperamentSystem;
         updateRootDropdown();
         generateInitialFretPositions(temperamentSystem); 
     }
@@ -853,6 +966,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function handleScreenshot() {
+        const elementsToHide = [
+            document.querySelector('.controls'),
+            document.getElementById('zoom-slider-container'),
+            ...document.querySelectorAll('.comments, #zeitler-credit')
+        ];
+
+        const originalDisplays = elementsToHide.map(el => el.style.display);
+
+        elementsToHide.forEach(el => {
+            if (el) el.style.display = 'none';
+        });
+
         const appElement = document.getElementById('app');
         html2canvas(appElement, { 
             backgroundColor: '#333',
@@ -862,6 +987,10 @@ document.addEventListener('DOMContentLoaded', () => {
             link.download = 'fretboard-screenshot.jpg';
             link.href = canvas.toDataURL('image/jpeg', 0.9);
             link.click();
+        }).finally(() => {
+            elementsToHide.forEach((el, index) => {
+                if(el) el.style.display = originalDisplays[index];
+            });
         });
     }
 
@@ -905,7 +1034,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        generateInitialFretPositions();
+        generateInitialFretPositions(state.temperament);
         TabEditor.init();
         renderApp();
     }
@@ -941,7 +1070,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateDiatonicChordsDisplay(scaleName, rootNoteIndex) {
         diatonicChordsContainer.innerHTML = '';
-        if (!scaleName || rootNoteIndex === undefined || state.temperament !== 12) {
+        const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament');
+        if (!scaleName || rootNoteIndex === undefined || !is12ToneBased) {
             return;
         }
 
@@ -1032,14 +1162,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const rootEdoInfo = frequencyToEdoInfo(rootFreq);
         if (!rootEdoInfo) return; // Guard
         const rootStepInOctave = rootEdoInfo.stepInOctave;
+        const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament');
+        const edo = is12ToneBased ? 12 : state.temperament;
 
         parentIntervals.forEach((interval, i) => {
-            const modeRootStep = (rootStepInOctave + interval) % state.temperament;
-            const modeRootName = (EDO_SYSTEMS[state.temperament]?.names[modeRootStep] || `S:${modeRootStep}`);
+            const modeRootStep = (rootStepInOctave + interval) % edo;
+            const modeRootName = is12ToneBased ? NOTE_NAMES[modeRootStep] : (EDO_SYSTEMS[edo]?.names[modeRootStep] || `S:${modeRootStep}`);
 
-            const modeIntervals = parentIntervals.map(p_int => (p_int - interval + state.temperament) % state.temperament).sort((a, b) => a - b);
+            const modeIntervals = parentIntervals.map(p_int => (p_int - interval + edo) % edo).sort((a, b) => a - b);
             const modeSteps = modeIntervals.map((n, j) => {
-                const next = modeIntervals[j + 1] || (modeIntervals[0] + state.temperament);
+                const next = modeIntervals[j + 1] || (modeIntervals[0] + edo);
                 return next - n;
             });
 
@@ -1061,9 +1193,9 @@ document.addEventListener('DOMContentLoaded', () => {
             li.appendChild(textContainer);
             
             li.addEventListener('click', () => {
-                const modeRootFreq = rootFreq * Math.pow(2, interval / state.temperament);
+                const modeRootFreq = rootFreq * Math.pow(2, interval / edo);
                 if (state.interactionMode === 'play') {
-                    const frequencies = modeIntervals.map(iv => modeRootFreq * Math.pow(2, iv / state.temperament));
+                    const frequencies = modeIntervals.map(iv => modeRootFreq * Math.pow(2, iv / edo));
                     AudioMidi.AudioPlayer.playSequence(frequencies);
                     return;
                 }
@@ -1083,11 +1215,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- UI UPDATE & INITIALIZATION ---
     function updateTheoryDefinitions() {
-        // Chord definitions are simpler and can stay as they are, just combining based on EDO.
         let chordDefs = { ...CHORD_DEFINITIONS };
-        if (state.temperament === 19) chordDefs = { ...chordDefs, ...CHORD_DEFINITIONS_19 };
-        if (state.temperament === 24) chordDefs = { ...chordDefs, ...CHORD_DEFINITIONS_24 };
-        if (state.temperament === 31) chordDefs = { ...chordDefs, ...CHORD_DEFINITIONS_31 };
+        const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament');
+
+        if (!is12ToneBased) {
+             if (state.temperament === 19) chordDefs = { ...chordDefs, ...CHORD_DEFINITIONS_19 };
+            if (state.temperament === 24) chordDefs = { ...chordDefs, ...CHORD_DEFINITIONS_24 };
+            if (state.temperament === 31) chordDefs = { ...chordDefs, ...CHORD_DEFINITIONS_31 };
+        }
         state.currentChordDefs = chordDefs;
 
         // Build scale definitions and the step-to-name reverse map
@@ -1105,10 +1240,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         };
-
-        if (state.temperament === 12) {
+        
+        if (is12ToneBased) {
             processScaleSet(source12EDOScales);
-        } else {
+        } else if (typeof state.temperament === 'number') {
             // Map the standard 12-EDO scales to the current EDO
             for (const scaleName in source12EDOScales) {
                 const steps = source12EDOScales[scaleName];
@@ -1125,13 +1260,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 finalScaleDefs[newName] = stepsToIntervals(convertedSteps);
                 stepsToNameMap.set(JSON.stringify(convertedSteps), newName);
             }
+             // Add the hardcoded, native scales for the current EDO, overwriting any mappings
+            const edoSpecificScales = { 19: SCALE_DEFINITIONS_19, 24: SCALE_DEFINITIONS_24, 31: SCALE_DEFINITIONS_31 };
+            if (edoSpecificScales[state.temperament]) {
+                processScaleSet(edoSpecificScales[state.temperament]);
+            }
         }
 
-        // Add the hardcoded, native scales for the current EDO, overwriting any mappings
-        const edoSpecificScales = { 19: SCALE_DEFINITIONS_19, 24: SCALE_DEFINITIONS_24, 31: SCALE_DEFINITIONS_31 };
-        if (edoSpecificScales[state.temperament]) {
-            processScaleSet(edoSpecificScales[state.temperament]);
-        }
 
         state.currentScaleDefs = finalScaleDefs;
         state.scaleStepsToNameMap = stepsToNameMap;
@@ -1169,10 +1304,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateRootDropdown() {
         const currentRootValue = rootNoteSelect.value;
         rootNoteSelect.innerHTML = '';
-        const edo = state.temperament || 12;
+        const edo = state.temperament;
         let noteNames;
         
-        if (edo === 12) {
+        const is12ToneBased = (edo === 12 || edo === 'just' || edo === 'true_temperament');
+
+        if (is12ToneBased) {
             noteNames = NOTE_NAMES;
         } else if (EDO_SYSTEMS[edo] && EDO_SYSTEMS[edo].names) {
             noteNames = EDO_SYSTEMS[edo].names;
@@ -1217,10 +1354,17 @@ document.addEventListener('DOMContentLoaded', () => {
     resetFretsBtn.addEventListener('click', () => { TabEditor.stop(); clearTheory(); state.instrumentMode = null; setTuning(6, 12, GUITAR_TUNING_HZ, GUITAR_GAUGES, 12); updateTheoryDefinitions(); TabEditor.init(); renderApp(); });
     toggleTuningBtn.addEventListener('click', () => { state.tuningPanelVisible = !state.tuningPanelVisible; renderApp(); });
     displayModeSelect.addEventListener('change', (e) => { state.noteDisplayMode = e.target.value; renderApp(); });
-    showChordBtn.addEventListener('click', handleShowChord); clearFretboardBtn.addEventListener('click', () => clearTheory(true));
+    showChordBtn.addEventListener('click', handleShowChord);
+    chordTypeSelect.addEventListener('change', handleShowChord);
+    clearFretboardBtn.addEventListener('click', () => clearTheory(true));
     playStrumBtn.addEventListener('click', handlePlayStrum);
     playShredBtn.addEventListener('click', handlePlayShred);
-    showScaleBtn.addEventListener('click', handleShowScale); randomScaleBtn.addEventListener('click', handleRandomScale);
+    showScaleBtn.addEventListener('click', handleShowScale);
+    scaleTypeSelect.addEventListener('change', () => {
+        handleShowScale();
+        scaleSearchInput.value = '';
+    });
+    randomScaleBtn.addEventListener('click', handleRandomScale);
     showAllNotesBtn.addEventListener('click', handleShowAllNotes);
     showFretNumbersBtn.addEventListener('click', () => { state.showFretNumbers = !state.showFretNumbers; renderApp(); });
     reverseStringsBtn.addEventListener('click', handleReverseView);
