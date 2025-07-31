@@ -23,10 +23,15 @@ const CircleOfFifths = (() => {
         }
 
         if (!_state.isRootLocked) {
+            // UNLOCKED: Change the root note and re-apply current scale/chord
             _dom.rootNoteSelect.value = pitchClass;
-            _dom.chordTypeSelect.value = chordType;
-            _handlers.handleShowChord();
+            if (_state.currentScale) {
+                _handlers.handleShowScale();
+            } else {
+                _handlers.handleShowChord();
+            }
         } else {
+            // LOCKED: Explore chords within the current key
             const voicing = _helpers.findChordVoicing(pitchClass, chordType);
             _state.notes = voicing;
             _state.currentChord = { root: pitchClass, type: chordType, notes: voicing };
@@ -66,12 +71,10 @@ const CircleOfFifths = (() => {
         }
 
         if (!_state.isRootLocked) {
+             _dom.rootNoteSelect.value = pitchClass;
             if (_state.currentScale) {
-                _dom.rootNoteSelect.value = pitchClass;
                 _handlers.handleShowScale();
             } else {
-                _dom.rootNoteSelect.value = pitchClass;
-                _dom.chordTypeSelect.value = chordType;
                 _handlers.handleShowChord();
             }
         } else {
@@ -124,12 +127,10 @@ const CircleOfFifths = (() => {
         }
         
         if (!_state.isRootLocked) {
+            _dom.rootNoteSelect.value = pitchClass;
             if (_state.currentScale) {
-                _dom.rootNoteSelect.value = pitchClass;
                 _handlers.handleShowScale();
             } else {
-                _dom.rootNoteSelect.value = pitchClass;
-                _dom.chordTypeSelect.value = chordType;
                 _handlers.handleShowChord();
             }
         } else {
@@ -159,6 +160,14 @@ const CircleOfFifths = (() => {
 
     function handleLockToggle() {
         _state.isRootLocked = !_state.isRootLocked;
+        updateLockVisuals();
+        if (!_state.isRootLocked) {
+             if (_state.currentScale) { _handlers.handleShowScale() } 
+             else if (_state.currentChord) { _handlers.handleShowChord() }
+        }
+    }
+    
+    function updateLockVisuals() {
         const lockCircle12 = _dom.cofLockBtn.querySelector('circle');
         const lockCircle19 = _dom.cof19LockBtn.querySelector('circle');
         const lockCircle31 = _dom.cof31LockBtn.querySelector('circle');
@@ -176,8 +185,6 @@ const CircleOfFifths = (() => {
             _dom.cofLockIcon.textContent = '🔓';
             _dom.cof19LockIcon.textContent = '🔓';
             _dom.cof31LockIcon.textContent = '🔓';
-            if (_state.currentScale) { _handlers.handleShowScale() } 
-            else if (_state.currentChord) { _handlers.handleShowChord() }
         }
     }
 
@@ -410,6 +417,9 @@ const CircleOfFifths = (() => {
         createCircleOfFifths();
         createCircleOfFifths19();
         createCircleOfFifths31();
+        
+        // Set the initial visual state of the lock based on the default state
+        updateLockVisuals();
 
         // Attach event listeners for the lock buttons
         _dom.cofLockBtn.addEventListener('click', handleLockToggle);
