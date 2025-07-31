@@ -35,7 +35,7 @@ const TabEditor = (() => {
 
             for (let colIndex = 0; colIndex < tabState.numCols; colIndex++) {
                 const cell = document.createElement('input');
-                cell.type = 'text';
+                cell.type = 'tel'; // Use 'tel' for better mobile/touch input
                 cell.className = 'tab-cell';
                 cell.maxLength = 2;
                 cell.dataset.stringIndex = stringIndex;
