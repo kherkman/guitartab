@@ -42,6 +42,8 @@ const TabEditor = (() => {
                 cell.dataset.colIndex = colIndex;
                 cell.value = tabState.data[stringIndex]?.[colIndex] || '-';
                 cell.addEventListener('input', handleTabCellChange);
+                // Select the cell content on focus for easy replacement
+                cell.addEventListener('focus', (e) => e.target.select());
                 dom.tabGrid.appendChild(cell);
             }
         });
