@@ -77,7 +77,21 @@ document.addEventListener('DOMContentLoaded', () => {
     function calculateFrequency(string) { if (!string || string.length <= 0 || string.width <= 0 || string.tension <= 0) return 0; const length_m = string.length * INCH_TO_METER, width_m = string.width * INCH_TO_METER, tension_N = string.tension * LBS_TO_NEWTONS; const radius_m = width_m / 2, area_m2 = Math.PI * Math.pow(radius_m, 2), linearDensity_mu = STEEL_DENSITY_KG_M3 * area_m2; return (1 / (2 * length_m)) * Math.sqrt(tension_N / linearDensity_mu); }
     function calculateLength(tension, width, frequency) { if(frequency <= 0) return 0; const width_m = width * INCH_TO_METER; const radius_m = width_m / 2; const area_m2 = Math.PI * Math.pow(radius_m, 2); const linearDensity_mu = STEEL_DENSITY_KG_M3 * area_m2; const tension_N = tension * LBS_TO_NEWTONS; const length_m = (1 / (2 * frequency)) * Math.sqrt(tension_N / linearDensity_mu); return length_m / INCH_TO_METER; }
     function calculateTension(string, targetFrequency) { if (!string || string.length <= 0 || string.width <= 0 || targetFrequency <= 0) return 0; const length_m = string.length * INCH_TO_METER, width_m = string.width * INCH_TO_METER; const radius_m = width_m / 2, area_m2 = Math.PI * Math.pow(radius_m, 2), linearDensity_mu = STEEL_DENSITY_KG_M3 * area_m2; const tension_N = linearDensity_mu * Math.pow(targetFrequency * 2 * length_m, 2); return tension_N / LBS_TO_NEWTONS; }
-    function calculateFrettedFrequency(stringIndex, fretIndex) { if(fretIndex >= state.frets) return 0; const string = state.strings[stringIndex]; if (fretIndex === -1) return calculateFrequency(string); const fretDividerPosition = state.fretPositions[stringIndex][fretIndex + 1]; const lengthRatio = (100 - fretDividerPosition) / 100; const frettedLength = string.length * lengthRatio; return calculateFrequency({ ...string, length: frettedLength }); }
+    function calculateFrettedFrequency(stringIndex, fretIndex) {
+        if (state.temperament === 'saz') {
+            const openStringFreq = calculateFrequency(state.strings[stringIndex]);
+            if (fretIndex === -1) return openStringFreq;
+            const ratio = SAZ_FRET_RATIOS[fretIndex];
+            return ratio ? openStringFreq * ratio : 0;
+        }
+    
+        if(fretIndex >= state.frets) return 0; 
+        const string = state.strings[stringIndex]; 
+        if (fretIndex === -1) return calculateFrequency(string); 
+        const fretDividerPosition = state.fretPositions[stringIndex][fretIndex + 1]; 
+        const lengthRatio = (100 - fretDividerPosition) / 100; 
+        const frettedLength = string.length * lengthRatio; return calculateFrequency({ ...string, length: frettedLength }); 
+    }
     function createStringWithTuning(freq, gauge) { const tempString = { length: 24.0, width: gauge }; return { ...tempString, tension: calculateTension(tempString, freq) }; }
     function midiToFrequency(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
     function frequencyToMidi(frequency) { return Math.round(69 + 12 * Math.log2(frequency / 440.0)); }
@@ -87,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const edo = state.temperament;
         
         // Use standard 12-TET naming/calculation for Just Intonation and True Temperament
-        if (edo === 12 || edo === 'just' || edo === 'true_temperament') {
+        if (edo === 12 || edo === 'just' || edo === 'true_temperament' || edo === 'saz') {
             const midi = frequencyToMidi(frequency);
             return {
                 midi: midi,
@@ -104,6 +118,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const octave = Math.floor(absoluteStep / edo);
         const stepInOctave = absoluteStep % edo;
         const edoData = EDO_SYSTEMS[edo] || {};
+        const noteName = (edoData.names && edoData.names[stepInOctave]) ? edoData.names[stepInOctave] : `S:${stepInOctave}`;
+        return { absoluteStep, octave, stepInOctave, noteName };
+    }
+    function frequencyToSpecificEdoInfo(frequency, targetEdo) {
+        if (!frequency || frequency <= 0 || !targetEdo) return null;
+
+        // Handle numeric EDOs
+        const C0_HZ = 16.351597831287414;
+        const absoluteStep = Math.round(targetEdo * Math.log2(frequency / C0_HZ));
+        const octave = Math.floor(absoluteStep / targetEdo);
+        const stepInOctave = absoluteStep % targetEdo;
+        const edoData = EDO_SYSTEMS[targetEdo] || {};
         const noteName = (edoData.names && edoData.names[stepInOctave]) ? edoData.names[stepInOctave] : `S:${stepInOctave}`;
         return { absoluteStep, octave, stepInOctave, noteName };
     }
@@ -207,10 +233,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const chordNoteIndexes = chordIntervals.map(i => (rootNoteIndex + i) % 12);
             let voicing = [];
             for (let i = 0; i < state.strings.length; i++) {
-                const openStringMidi = frequencyToMidi(calculateFrequency(state.strings[i]));
+                const openStringMidi = frequencyToMidi(calculateFrettedFrequency(i, -1));
                 let bestFret = null;
                 for (let fret = -1; fret < state.frets; fret++) {
-                    const currentNoteMidi = openStringMidi + (fret + 1);
+                    const currentNoteMidi = frequencyToMidi(calculateFrettedFrequency(i, fret));
                     const currentNoteIndex = currentNoteMidi % 12;
                     if (chordNoteIndexes.includes(currentNoteIndex)) {
                         bestFret = fret;
@@ -229,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function findFirstAvailableNoteLocation(midiNote) {
         for (let i = state.strings.length - 1; i >= 0; i--) {
-            const openStringMidi = frequencyToMidi(calculateFrequency(state.strings[i]));
+            const openStringMidi = frequencyToMidi(calculateFrettedFrequency(i, -1));
             const fret = midiNote - openStringMidi;
             if (fret >= 0 && fret < state.frets) {
                 return { string: i, fret: fret };
@@ -252,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
         comments31Edo.style.display = (state.temperament === 31) ? 'block' : 'none';
 
         const isManualMode = !state.currentChord && !state.currentScale;
-        const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament');
+        const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament' || state.temperament === 'saz');
         const recognizedChord = (isManualMode && is12ToneBased) ? recognizeChord(state.notes) : null;
         const recognizedScale = (isManualMode && !recognizedChord && is12ToneBased) ? recognizeScale(state.notes) : null;
 
@@ -301,7 +327,6 @@ document.addEventListener('DOMContentLoaded', () => {
         cofSvg.parentElement.style.display = is12ToneBased ? 'flex' : 'none';
         cof19Container.style.display = state.temperament === 19 ? 'flex' : 'none';
         cof31Container.style.display = state.temperament === 31 ? 'flex' : 'none';
-        scaleModesContainer.style.display = state.currentScale ? 'flex' : 'none';
 
         stringControlsContainer.innerHTML = ''; fretboardContainer.innerHTML = ''; fretNumbersContainer.innerHTML = '';
         
@@ -360,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const rootFreq = getRootFrequency();
             const rootEdoInfo = frequencyToEdoInfo(rootFreq);
             let intervalColor = '#4a90e2'; // Default color
-            const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament');
+            const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament' || state.temperament === 'saz');
 
             if (rootEdoInfo && edoInfo && is12ToneBased) {
                 const intervalSteps = edoInfo.absoluteStep - rootEdoInfo.absoluteStep;
@@ -376,11 +401,12 @@ document.addEventListener('DOMContentLoaded', () => {
             switch(state.noteDisplayMode) {
                 case 'names':
                     if (state.temperament === 'saz') {
-                        const sazOpenStringNames = ['G2', 'D3', 'A3'];
-                        if (note.fret === -1) {
-                            label = sazOpenStringNames[note.string];
-                        } else if (SAZ_FRET_DEFINITIONS[note.fret]) {
-                            label = SAZ_FRET_DEFINITIONS[note.fret].name;
+                        // Use the 'saz' frequency but find the nearest note name in 24-EDO.
+                        const edoInfo24 = frequencyToSpecificEdoInfo(frettedFreq, 24);
+                        if (edoInfo24) {
+                            label = `${edoInfo24.noteName}${edoInfo24.octave}`;
+                        } else {
+                            label = '?';
                         }
                     } else {
                         label = `${edoInfo.noteName}${edoInfo.octave}`;
@@ -589,7 +615,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const baseIntervals = chordStepsToAbsoluteIntervals(chordDef.steps);
         
         let voicing;
-        if (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament') {
+        if (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament' || state.temperament === 'saz') {
             voicing = findChordVoicing(rootStep, chordType, false);
         } else {
             const rootFrequency = getRootFrequency();
@@ -603,7 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const rootNoteName = rootNoteSelect.options[rootNoteSelect.selectedIndex].text;
         let noteNames;
-        const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament');
+        const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament' || state.temperament === 'saz');
         if (is12ToneBased) {
             noteNames = baseIntervals.map(i => NOTE_NAMES[(rootStep + i) % 12]).join(' · ');
         } else {
@@ -656,7 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const rootEdoInfo = frequencyToEdoInfo(rootFrequency);
         if (!rootEdoInfo) { state.notes = []; renderApp(); return; } // Guard
 
-        const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament');
+        const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament' || state.temperament === 'saz');
         const edo = is12ToneBased ? 12 : state.temperament;
 
         const rootStepInOctave = rootEdoInfo.stepInOctave;
@@ -721,7 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const rootNoteName = rootNoteSelect.options[rootNoteSelect.selectedIndex].text;
         let noteNames;
-        const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament');
+        const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament' || state.temperament === 'saz');
 
         if (is12ToneBased) {
             noteNames = edoIntervals.map(i => NOTE_NAMES[(rootStep + i) % 12]).join(' · ');
@@ -975,7 +1001,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const gaugeRatio = isLow ? 1.3 : 1 / 1.3;
                 const refIndex = isLow ? 0 : state.strings.length - 1;
                 const refString = state.strings[refIndex];
-                const refFreq = calculateFrequency(refString);
+                const refFreq = calculateFrettedFrequency(refIndex, -1);
                 const newFreq = refFreq * Math.pow(2, semitoneShift / 12);
                 const newGauge = refString.width * gaugeRatio;
                 const newString = createStringWithTuning(newFreq, newGauge);
@@ -1025,7 +1051,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateDiatonicChordsDisplay(scaleName, rootNoteIndex) {
         diatonicChordsContainer.innerHTML = '';
-        const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament');
+        const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament' || state.temperament === 'saz');
         if (!scaleName || rootNoteIndex === undefined || !is12ToneBased) {
             return;
         }
@@ -1117,7 +1143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const rootEdoInfo = frequencyToEdoInfo(rootFreq);
         if (!rootEdoInfo) return; // Guard
         const rootStepInOctave = rootEdoInfo.stepInOctave;
-        const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament');
+        const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament' || state.temperament === 'saz');
         const edo = is12ToneBased ? 12 : state.temperament;
 
         parentIntervals.forEach((interval, i) => {
@@ -1171,7 +1197,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- UI UPDATE & INITIALIZATION ---
     function updateTheoryDefinitions() {
         let chordDefs = { ...CHORD_DEFINITIONS };
-        const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament');
+        const is12ToneBased = (state.temperament === 12 || state.temperament === 'just' || state.temperament === 'true_temperament' || state.temperament === 'saz');
 
         if (!is12ToneBased) {
              if (state.temperament === 19) chordDefs = { ...chordDefs, ...CHORD_DEFINITIONS_19 };
@@ -1267,7 +1293,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const edo = state.temperament;
         let noteNames;
         
-        const is12ToneBased = (edo === 12 || edo === 'just' || edo === 'true_temperament');
+        const is12ToneBased = (edo === 12 || edo === 'just' || edo === 'true_temperament' || edo === 'saz');
 
         if (is12ToneBased) {
             noteNames = NOTE_NAMES;
