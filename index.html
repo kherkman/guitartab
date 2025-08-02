@@ -225,7 +225,8 @@
                             <option value="guitar">Standard Guitar</option>
                             <option value="bass">Standard Bass</option>
                             <option value="ukulele">Standard Ukulele</option>
-                            <option value="saz">Saz</option>
+                            <option value="saz">Saz (Just)</option>
+                            <option value="saz_53_edo">Saz (53-EDO Makam)</option>
                             <option value="drop_d">Drop D</option>
                             <option value="open_g">Open G</option>
                             <option value="dadgad">DADGAD</option>
@@ -392,6 +393,59 @@
         <div class="comments"><h3>How To Use</h3><ul><li><strong>Contextual Info:</strong> Selecting some presets like "Overtone Series Demo" will show a special information panel below.</li><li><strong>Scale Libraries:</strong> Use the "Show Zeitler Scales" button to switch between the basic scale list and a massive library of over 2000 scales.</li><li><strong>Tab Playback:</strong> Press the <strong>Spacebar</strong> to play or pause the tablature sequence.</li><li><strong>Circle of Fifths:</strong> Default scale is major. Click a note to view a chord. The circle is locked by default (🔒); in this state, clicking a chord will show its voicing without changing the key. If unlocked (🔓), clicking a chord will only change the root note, allowing you to easily transpose the current scale.</li></ul></div>
         <div class="comments"><h3>Physics Formula</h3><p><code>frequency = (1 / (2 * L)) * sqrt(T / μ)</code> where L=Length, T=Tension, μ=Linear Density.</p><p>Linear Density <code>μ = ρ * (π * (width/2)^2)</code> where ρ=Material Density.</p></div>
         <div class="comments"><h3>Interval Calculation Formulas</h3><p><strong>Equal Divisions of the Octave (EDO):</strong> Divides the octave (a 2/1 frequency ratio) into N equal steps. The frequency for any step is calculated as <code>freq = baseFreq * 2^(step / N)</code>. Standard tuning is 12-EDO.</p><p><strong>Just Intonation (JI):</strong> Defines intervals by simple integer ratios, leading to pure-sounding consonances. The frequency for any interval is <code>freq = baseFreq * (p / q)</code>, e.g., a perfect fifth is 3/2.</p></div>
+        <div class="comments" id="saz-comments" style="display: none;">
+            <h3>Saz & Makam Systems</h3>
+            <p>Use the "Saz (Just)" preset to explore the unique, practical sound of that specific non-tempered tuning, using the fret names and intervals that are inherently part of its design.</p>
+            <p>Use the "Saz (53-EDO Makam)" preset specifically to select and learn the structure of the foundational makams like Uşşak, Hicaz, Rast, and Hüseyni. The Arel-Ezgi System (Comma-Based) is a comprehensive, mathematical framework designed to classify and notate all the pitches and intervals used in Turkish makam music. It divides the octave into 53 equal microtones called "commas."</p>
+            
+            <!-- --- NEW ADDITION --- -->
+            <h4>Comparative Breakdown of Saz Tuning Systems</h4>
+            <style>
+                .saz-comparison-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.8em; }
+                .saz-comparison-table th, .saz-comparison-table td { border: 1px solid #555; padding: 6px; text-align: left; white-space: nowrap; }
+                .saz-comparison-table th { background-color: #3a3a3a; color: #e0a800; }
+                .saz-comparison-table thead th { text-align: center; font-size: 0.9em; }
+                .saz-comparison-table tbody tr:nth-child(even) { background-color: #3a3a3a; }
+                .saz-comparison-table .fret-num { text-align: center; font-weight: bold; color: #ffc107;}
+                .saz-comparison-table code { background-color: #444; padding: 2px 4px; border-radius: 3px; font-family: monospace; }
+            </style>
+            <div style="overflow-x:auto;">
+                <table class="saz-comparison-table">
+                    <thead>
+                        <tr>
+                            <th rowspan="2">Fret #</th>
+                            <th colspan="3">Arel-Ezgi System (Theoretical 53-EDO)</th>
+                            <th colspan="3">Yalçın Tura System (Traditional Just Intonation)</th>
+                            <th colspan="4">Saz (Just) Preset (Practical/Custom)</th>
+                        </tr>
+                        <tr>
+                            <th>Fret/Note Name</th><th>Interval Name</th><th>Ratio (Formula)</th>
+                            <th>Fret/Note Name</th><th>Interval Name</th><th>Ratio (Fraction)</th>
+                            <th>Fret/Note Name</th><th>Interval Name</th><th>Ratio (Decimal)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="fret-num">1</td><td>Kürdi</td><td>Bakiye (4c)</td><td><code>2<sup>(4/53)</sup></code></td><td>Kürdi</td><td>Limma / Semitone</td><td>18/17</td><td>Pest Segâh</td><td>Komali 2'li</td><td>1.0558</td></tr>
+                        <tr><td class="fret-num">2</td><td>Dik Kürdi</td><td>K. Mücennep (5c)</td><td><code>2<sup>(5/53)</sup></code></td><td>Dik Kürdi</td><td>Neutral Second</td><td>12/11</td><td>Pest Kürdi</td><td>Bakiye</td><td>1.1058</td></tr>
+                        <tr><td class="fret-num">3</td><td>Segâh</td><td>B. Mücennep (8c)</td><td><code>2<sup>(8/53)</sup></code></td><td>Segâh</td><td>Major Second</td><td>9/8</td><td>Çargah</td><td>Küçük Mücennep</td><td>1.1272</td></tr>
+                        <tr><td class="fret-num">4</td><td>Çargah</td><td><b>Tanini (9c)</b></td><td><b><code>2<sup>(9/53)</sup></code></b></td><td>Dik Segâh</td><td>Aug. Second (Small)</td><td>81/68</td><td>Neva</td><td>Büyük Mücennep</td><td>1.1804</td></tr>
+                        <tr><td class="fret-num">5</td><td>Buselik</td><td>Tanini+Bakiye (13c)</td><td><code>2<sup>(13/53)</sup></code></td><td>Hisar</td><td>Neutral Third</td><td>27/22</td><td>Hüseyni</td><td>Tanini</td><td>1.2238</td></tr>
+                        <tr><td class="fret-num">6</td><td>Neva</td><td>2 Taninis (18c)</td><td><code>2<sup>(18/53)</sup></code></td><td>Acem</td><td>Major Third</td><td>81/64</td><td>Acem</td><td>Artık 2'li</td><td>1.2681</td></tr>
+                        <tr><td class="fret-num">7</td><td>Hüseyni</td><td><b>Perfect Fourth (22c)</b></td><td><b><code>2<sup>(22/53)</sup></code></b></td><td>Çargah</td><td>Perfect Fourth</td><td>4/3</td><td>Eviç</td><td>Tam 4'lü</td><td>1.3257</td></tr>
+                        <tr><td class="fret-num">8</td><td>Acem</td><td>A4 (26c)</td><td><code>2<sup>(26/53)</sup></code></td><td>Sabâ</td><td>Tritone (Just)</td><td>24/17</td><td>Mahur</td><td>Artık 4'lü</td><td>1.3944</td></tr>
+                        <tr><td class="fret-num">9</td><td>Eviç</td><td>d5 (27c)</td><td><code>2<sup>(27/53)</sup></code></td><td>Eviç</td><td>Neutral Fifth</td><td>16/11</td><td>Gerdaniye</td><td>Eksik 5'li</td><td>1.4493</td></tr>
+                        <tr><td class="fret-num">10</td><td>Gerdaniye</td><td><b>Perfect Fifth (31c)</b></td><td><b><code>2<sup>(31/53)</sup></code></b></td><td>Neva</td><td>Perfect Fifth</td><td>3/2</td><td>Muhayyer</td><td>Tam 5'li</td><td>1.4799</td></tr>
+                        <tr><td class="fret-num">11</td><td>Muhayyer</td><td>Minor Sixth (35c)</td><td><code>2<sup>(35/53)</sup></code></td><td>Dik Neva</td><td>Aug. Fifth (Small)</td><td>27/17</td><td>Sünbüle</td><td>Komali 6'lı</td><td>1.5555</td></tr>
+                        <tr><td class="fret-num">12</td><td>Tiz Segâh</td><td>Major Sixth (36c)</td><td><code>2<sup>(36/53)</sup></code></td><td>Buselik</td><td>Major Sixth</td><td>18/11</td><td>Zirgüle</td><td>Bakiye 6'lı</td><td>1.6204</td></tr>
+                        <tr><td class="fret-num">13</td><td>Tiz Buselik</td><td><b>Minor Seventh (40c)</b></td><td><b><code>2<sup>(40/53)</sup></code></b></td><td>Hüseyni</td><td>Pyth. Major Sixth</td><td>27/16</td><td>Şehnaz</td><td>K. Mücennep 6'lı</td><td>1.6949</td></tr>
+                        <tr><td class="fret-num">14</td><td>Tiz Çargah</td><td>Minor Seventh+ (41c)</td><td><code>2<sup>(41/53)</sup></code></td><td>Irak</td><td>Minor Seventh</td><td>16/9</td><td>Saba</td><td>Eksik 7'li</td><td>1.7677</td></tr>
+                        <tr><td class="fret-num">15</td><td>Tiz Neva</td><td><b>Major Seventh (44c)</b></td><td><b><code>2<sup>(44/53)</sup></code></b></td><td>Dik Irak</td><td>Augmented Sixth</td><td>32/17</td><td>Buselik</td><td>Küçük 7'li</td><td>1.8470</td></tr>
+                        <tr><td class="fret-num">16</td><td>Tiz Hüseyni</td><td>Major Seventh+ (45c)</td><td><code>2<sup>(45/53)</sup></code></td><td>Mahur</td><td>Major Seventh</td><td>64/33</td><td>Hicaz</td><td>Büyük 7'li</td><td>1.9231</td></tr>
+                        <tr><td class="fret-num">17</td><td>Tiz Acem</td><td><b>Octave (53c)</b></td><td><b><code>2<sup>(53/53)</sup></code></b></td><td>Gerdaniye</td><td>Octave</td><td>2/1</td><td>Nym Hicaz</td><td>Oktav</td><td>2.0</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
         <div class="comments" id="overtone-comments" style="display: none;">
             <h3>Overtone Series Explained</h3>
             <p>The “Overtone Series demo” visually demonstrates that frequency is inversely proportional to length (f ∝ 1/L). At the same time the object is vibrating as a whole, it is also vibrating in smaller, faster sections. It vibrates in halves, in thirds, in fourths, and so on.</p>
@@ -429,6 +483,7 @@
     <script src="voicings-alternative.js"></script>
     <script src="scales.js"></script>
     <script src="zeitler-scales.js"></script>
+    <script src="constants.js"></script>
     <script src="tab-editor.js"></script>
     <script src="circle-of-fifths.js"></script>
     <script src="audio-midi.js"></script>
